@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeGuard AI · 出海选品决策</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161b27;
+  --bg3: #1e2535;
+  --bg4: #242d40;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --primary: #3b82f6;
+  --primary-dim: rgba(59,130,246,0.1);
+  --green: #22c55e;
+  --green-dim: rgba(34,197,94,0.08);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.08);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.08);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.08);
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  width: 100%;
+  height: 54px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 14px;
+  background: var(--bg2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+.logo em { color: var(--primary); font-style: normal; }
+.logo-sep { color: var(--muted); font-size: 13px; }
+.logo-sub { font-size: 12px; color: var(--muted); }
+.topbar-pills { margin-left: auto; display: flex; gap: 6px; }
+.pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg3);
+  color: var(--muted2);
+  border: 1px solid var(--border);
+}
+.pill.green { background: var(--green-dim); color: var(--green); border-color: rgba(34,197,94,0.2); }
+
+/* ── LAYOUT ── */
+.wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 36px 20px 60px;
+}
+
+/* ── ENTRY ── */
+.entry { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+.entry-head { text-align: center; }
+.entry-head h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+.entry-head p { font-size: 13px; color: var(--muted2); }
+
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; }
+.mode-card {
+  border-radius: 14px;
+  padding: 26px 22px 22px;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--bg2);
+  transition: all 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2.5px;
+  border-radius: 14px 14px 0 0;
+}
+.mode-a::after { background: linear-gradient(90deg,#3b82f6,#818cf8); }
+.mode-b::after { background: linear-gradient(90deg,#22c55e,#34d399); }
+.mode-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.mode-icon { font-size: 28px; margin-bottom: 12px; }
+.mode-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.mode-a .mode-badge { color: var(--primary); }
+.mode-b .mode-badge { color: var(--green); }
+.mode-title { font-size: 16px; font-weight: 700; margin-bottom: 7px; }
+.mode-desc { font-size: 12px; color: var(--muted2); line-height: 1.65; }
+.mode-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 14px;
+  align-items: center;
+}
+.ms { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.mode-a .ms { background: var(--primary-dim); color: var(--primary); }
+.mode-b .ms { background: var(--green-dim); color: var(--green); }
+.ms-arr { color: var(--muted); font-size: 10px; }
+
+/* ── PROGRESS ── */
+.progress {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.p-node { display: flex; align-items: center; gap: 7px; }
+.p-dot {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+.p-dot.done { background: var(--green); color: #fff; }
+.p-dot.active { background: var(--primary); color: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,0.2); }
+.p-dot.pend { background: var(--bg3); color: var(--muted); border: 1.5px solid var(--border); }
+.p-lbl { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.p-lbl.active { color: var(--text); font-weight: 600; }
+.p-line { flex: 1; height: 1px; background: var(--border); margin: 0 6px; min-width: 16px; }
+.p-line.done { background: rgba(34,197,94,0.35); }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 14px;
+}
+.card-tag {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+.card-h { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+.card-sub { font-size: 13px; color: var(--muted2); line-height: 1.55; margin-bottom: 18px; }
+
+/* ── INPUTS ── */
+input[type=text], textarea, select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 13px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+textarea { resize: vertical; min-height: 72px; }
+select option { background: var(--bg2); }
+.field-lbl { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.field { margin-bottom: 12px; }
+
+/* ── CHIPS ── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 5px 11px; border-radius: 6px;
+  font-size: 12px; cursor: pointer;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  transition: all 0.15s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip.on { background: var(--primary-dim); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+.chip.on-g { background: var(--green-dim); border-color: rgba(34,197,94,0.4); color: var(--green); font-weight: 600; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; outline: none;
+  transition: all 0.18s; white-space: nowrap;
+  font-family: inherit;
+}
+.btn-blue { background: var(--primary); color: #fff; }
+.btn-blue:hover { background: #2563eb; }
+.btn-blue:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #16a34a; }
+.btn-ghost { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
+.btn-ghost:hover { border-color: var(--border2); background: var(--bg4); }
+.btn-sm { padding: 6px 13px; font-size: 12px; }
+
+/* ── TAG ── */
+.tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 4px;
+  font-size: 11px; font-weight: 600;
+}
+.t-green { background: var(--green-dim); color: var(--green); }
+.t-amber { background: var(--amber-dim); color: var(--amber); }
+.t-red { background: var(--red-dim); color: var(--red); }
+.t-blue { background: var(--primary-dim); color: var(--primary); }
+.t-purple { background: var(--purple-dim); color: var(--purple); }
+.t-muted { background: var(--bg4); color: var(--muted2); }
+
+/* ── LOADING ── */
+.loading {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  padding: 36px; color: var(--muted2); font-size: 13px;
+}
+.spin {
+  width: 28px; height: 28px;
+  border: 2.5px solid var(--border2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fu { animation: fadeUp 0.3s ease; }
+
+/* ── BACK ── */
+.back {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--muted); cursor: pointer;
+  margin-bottom: 22px; transition: color 0.2s;
+}
+.back:hover { color: var(--text); }
+
+/* ── MARKET ROW ── */
+.market-list { display: flex; flex-direction: column; gap: 8px; }
+.mkt-row {
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex; align-items: flex-start; gap: 12px;
+  cursor: pointer; transition: all 0.18s;
+}
+.mkt-row:hover { border-color: var(--border2); }
+.mkt-row.sel { border-color: var(--primary); background: rgba(59,130,246,0.06); }
+.mkt-flag { font-size: 22px; flex-shrink: 0; padding-top: 2px; }
+.mkt-body { flex: 1; }
+.mkt-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.mkt-score-line {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.bar-wrap { flex: 1; height: 5px; background: var(--border2); border-radius: 3px; overflow: hidden; max-width: 160px; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.mkt-score-num { font-size: 18px; font-weight: 800; min-width: 36px; text-align: right; }
+.mkt-reason { font-size: 12px; color: var(--muted2); line-height: 1.5; }
+.mkt-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
+.mkt-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  flex-shrink: 0; margin-top: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: all 0.18s;
+}
+.mkt-row.sel .mkt-check { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ── CONFIRM BAR ── */
+.confirm-bar {
+  background: var(--bg2);
+  border: 1.5px solid var(--primary);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px;
+}
+.confirm-bar .icon { font-size: 20px; }
+.confirm-bar .txt { flex: 1; }
+.confirm-bar .txt strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.confirm-bar .txt span { font-size: 12px; color: var(--muted2); }
+
+/* ── COMPLIANCE ── */
+.comp-list { display: flex; flex-direction: column; gap: 7px; }
+.comp-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 13px; border-radius: 8px;
+  font-size: 13px;
+}
+.comp-item.danger { background: var(--red-dim); border: 1px solid rgba(239,68,68,0.18); }
+.comp-item.warn { background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.18); }
+.comp-item.ok { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.15); }
+.comp-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.comp-title { font-weight: 700; margin-bottom: 2px; }
+.comp-sub { font-size: 12px; color: var(--muted2); line-height: 1.45; }
+
+/* ── SKU CARD ── */
+.sku-list { display: flex; flex-direction: column; gap: 10px; }
+.sku-card {
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer; transition: all 0.18s;
+}
+.sku-card:hover { border-color: var(--border2); }
+.sku-card.sel { border-color: var(--green); background: rgba(34,197,94,0.05); }
+
+/* ── SKU HEADER ── */
+.sku-head {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
+}
+.sku-rank {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.r1 { background: rgba(245,158,11,0.15); color: var(--amber); }
+.r2 { background: var(--bg4); color: var(--muted2); }
+.r3 { background: var(--bg4); color: var(--muted2); }
+.sku-title-area { flex: 1; }
+.sku-name { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+.sku-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.sku-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: all 0.18s;
+}
+.sku-card.sel .sku-check { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* ── METRICS GRID ── */
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+.metric {
+  background: var(--bg4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+}
+.metric-lbl { font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-val { font-size: 16px; font-weight: 800; }
+.metric-sub { font-size: 10px; color: var(--muted2); margin-top: 2px; }
+
+/* ── MINI CHART (sparkline) ── */
+.sparkline-wrap { margin: 10px 0 6px; }
+.sparkline-lbl { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.sparkline {
+  position: relative; height: 40px;
+  display: flex; align-items: flex-end; gap: 3px;
+}
+.sp-bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  transition: opacity 0.2s;
+  min-width: 6px;
+}
+.sp-bar:hover { opacity: 0.7; }
+
+/* ── REVIEW GAPS ── */
+.gap-list { display: flex; flex-direction: column; gap: 6px; }
+.gap-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; padding: 7px 10px;
+  background: var(--bg4); border-radius: 6px;
+}
+.gap-icon { font-size: 13px; }
+.gap-txt { flex: 1; }
+.gap-opp { font-weight: 700; color: var(--green); font-size: 11px; }
+
+/* ── PROFIT CALC ── */
+.profit-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.profit-row:last-child { border-bottom: none; }
+.profit-lbl { color: var(--muted2); }
+.profit-val { font-weight: 700; }
+.profit-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; border-radius: 8px;
+  background: var(--green-dim); border: 1px solid rgba(34,197,94,0.2);
+  font-weight: 800; font-size: 15px; margin-top: 8px;
+  color: var(--green);
+}
+
+/* ── STRATEGY ── */
+.strat-section { margin-bottom: 18px; }
+.strat-h {
+  font-size: 11px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+  padding-bottom: 7px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.strat-item {
+  display: flex; gap: 8px; margin-bottom: 8px;
+  font-size: 13px; line-height: 1.6;
+}
+.strat-dot { color: var(--primary); flex-shrink: 0; margin-top: 3px; font-size: 12px; }
+
+/* ── DIVIDER ── */
+.div { height: 1px; background: var(--border); margin: 18px 0; }
+
+/* ── NOTE ── */
+.note { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
+
+/* ── SECTION HIDDEN ── */
+.section { display: none; }
+.section.on { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Trade<em>Guard</em> <span class="logo-sep">·</span> AI</div>
+  <div class="logo-sub">joybuy 欧洲出海决策</div>
+  <div class="topbar-pills">
+    <span class="pill green">● DE / UK / FR 已接入</span>
+    <span class="pill">数据更新 2026-04</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════ ENTRY ══════════════ -->
+<div class="section on" id="s-entry">
+  <div class="entry">
+    <div class="entry-head">
+      <h1>选择你的出海场景</h1>
+      <p>根据你的起点进入工作流，AI 引导你逐步完成市场评估与运营方案</p>
+    </div>
+    <div class="modes">
+      <div class="mode-card mode-a" onclick="gotoA()">
+        <div class="mode-icon">📦</div>
+        <div class="mode-badge">模式 A · 已有商品</div>
+        <div class="mode-title">评估哪个市场更适合我的产品</div>
+        <div class="mode-desc">输入你的在售或新品 SKU，AI 分析欧洲各市场匹配度、市场机会、竞争格局，你选定市场后生成运营落地方案。</div>
+        <div class="mode-steps">
+          <span class="ms">输入商品</span><span class="ms-arr">→</span>
+          <span class="ms">市场评估</span><span class="ms-arr">→</span>
+          <span class="ms">✋ 选市场</span><span class="ms-arr">→</span>
+          <span class="ms">运营方案</span>
+        </div>
+      </div>
+      <div class="mode-card mode-b" onclick="gotoB()">
+        <div class="mode-icon">🗺️</div>
+        <div class="mode-badge">模式 B · 已定市场</div>
+        <div class="mode-title">锁定市场后，发现最有潜力的品</div>
+        <div class="mode-desc">输入目标国家和品类方向，AI 给出细分选品推荐、机会分析、竞争评估，你选品后查看完整营销策略。</div>
+        <div class="mode-steps">
+          <span class="ms">市场+品类</span><span class="ms-arr">→</span>
+          <span class="ms">选品分析</span><span class="ms-arr">→</span>
+          <span class="ms">✋ 选商品</span><span class="ms-arr">→</span>
+          <span class="ms">营销策略</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODE A ══════════════ -->
+<div class="section" id="s-a">
+  <div class="back" onclick="home()">← 返回首页</div>
+  <div class="progress" id="prog-a">
+    <div class="p-node"><div class="p-dot active" id="ad1">1</div><div class="p-lbl active" id="al1">输入商品</div></div>
+    <div class="p-line" id="aline1"></div>
+    <div class="p-node"><div class="p-dot pend" id="ad2">2</div><div class="p-lbl" id="al2">市场评估</div></div>
+    <div class="p-line" id="aline2"></div>
+    <div class="p-node"><div class="p-dot pend" id="ad3">3</div><div class="p-lbl" id="al3">选定市场</div></div>
+    <div class="p-line" id="aline3"></div>
+    <div class="p-node"><div class="p-dot pend" id="ad4">4</div><div class="p-lbl" id="al4">运营方案</div></div>
+  </div>
+
+  <!-- A Step 1 -->
+  <div id="a1">
+    <div class="card">
+      <div class="card-tag">步骤 1 · 商品信息</div>
+      <div class="card-h">告诉我你的商品</div>
+      <div class="card-sub">描述商品名称、材质、已有认证、目标价位等，越详细越准确</div>
+      <div class="field">
+        <div class="field-lbl">商品描述</div>
+        <input type="text" id="a-sku" placeholder="e.g. 304不锈钢双层保温杯 500ml，已有CE认证，出厂成本¥45">
+      </div>
+      <div class="field">
+        <div class="field-lbl">从已有商品快速选择</div>
+        <div class="chips">
+          <div class="chip" onclick="pickSku(this,'304不锈钢保温杯 500ml，CE认证，出厂成本¥45，天猫月销2000单')">不锈钢保温杯</div>
+          <div class="chip" onclick="pickSku(this,'竹纤维餐具套装（筷+勺+叉），可降解包装，出厂成本¥18')">竹纤维餐具套装</div>
+          <div class="chip" onclick="pickSku(this,'铸铁珐琅锅 24cm，LFGB认证，出厂成本¥120')">铸铁珐琅锅</div>
+          <div class="chip" onclick="pickSku(this,'硅胶厨房工具套装 8件，食品级硅胶，出厂成本¥22')">硅胶厨房工具</div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-lbl">补充信息（可选）</div>
+        <textarea id="a-extra" placeholder="e.g. 希望售价€20–€28，主打环保概念，供应链广东..."></textarea>
+      </div>
+      <button class="btn btn-blue" onclick="runA2()" style="margin-top:6px">开始市场评估 →</button>
+    </div>
+  </div>
+
+  <!-- A Step 2 -->
+  <div id="a2" style="display:none">
+    <div class="card fu">
+      <div class="card-tag">步骤 2 · 市场匹配评估</div>
+      <div class="card-h" id="a2-h">分析中...</div>
+      <div id="a2-loading" class="loading"><div class="spin"></div>正在评估欧洲各市场匹配度...</div>
+      <div id="a2-body" style="display:none">
+        <div class="card-sub" id="a2-sub"></div>
+        <div class="market-list" id="a2-markets"></div>
+        <div class="note">↑ 点击勾选目标市场，可多选</div>
+      </div>
+    </div>
+    <div class="card fu" id="a2-comp-card" style="display:none">
+      <div class="card-tag">⚖️ 合规预警</div>
+      <div class="comp-list" id="a2-comp"></div>
+    </div>
+    <div class="confirm-bar fu" id="a2-confirm" style="display:none">
+      <div class="icon">✋</div>
+      <div class="txt">
+        <strong>人工确认：选定目标市场</strong>
+        <span>勾选你要重点开拓的市场，AI 将生成针对性运营方案</span>
+      </div>
+      <button class="btn btn-blue" id="a2-btn" onclick="runA3()" disabled>请先勾选市场</button>
+    </div>
+  </div>
+
+  <!-- A Step 3 -->
+  <div id="a3" style="display:none">
+    <div class="card fu">
+      <div class="card-tag">步骤 3 · 运营落地方案</div>
+      <div class="card-h" id="a3-h"></div>
+      <div id="a3-loading" class="loading"><div class="spin"></div>正在生成运营方案...</div>
+      <div id="a3-body" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODE B ══════════════ -->
+<div class="section" id="s-b">
+  <div class="back" onclick="home()">← 返回首页</div>
+  <div class="progress">
+    <div class="p-node"><div class="p-dot active" id="bd1">1</div><div class="p-lbl active" id="bl1">市场+品类</div></div>
+    <div class="p-line" id="bline1"></div>
+    <div class="p-node"><div class="p-dot pend" id="bd2">2</div><div class="p-lbl" id="bl2">选品分析</div></div>
+    <div class="p-line" id="bline2"></div>
+    <div class="p-node"><div class="p-dot pend" id="bd3">3</div><div class="p-lbl" id="bl3">选定商品</div></div>
+    <div class="p-line" id="bline3"></div>
+    <div class="p-node"><div class="p-dot pend" id="bd4">4</div><div class="p-lbl" id="bl4">营销策略</div></div>
+  </div>
+
+  <!-- B Step 1 -->
+  <div id="b1">
+    <div class="card">
+      <div class="card-tag">步骤 1 · 市场与品类</div>
+      <div class="card-h">选择目标市场和品类方向</div>
+      <div class="card-sub">AI 将在此方向内推荐具体细分商品，并给出机会评分和选品理由</div>
+      <div class="field">
+        <div class="field-lbl">目标市场（可多选）</div>
+        <div class="chips" id="b-mkt-chips">
+          <div class="chip" onclick="toggleB(this,'mkt','de')">🇩🇪 德国</div>
+          <div class="chip" onclick="toggleB(this,'mkt','uk')">🇬🇧 英国</div>
+          <div class="chip" onclick="toggleB(this,'mkt','fr')">🇫🇷 法国</div>
+          <div class="chip" onclick="toggleB(this,'mkt','se')">🇸🇪 瑞典</div>
+          <div class="chip" onclick="toggleB(this,'mkt','nl')">🇳🇱 荷兰</div>
+          <div class="chip" onclick="toggleB(this,'mkt','pl')">🇵🇱 波兰</div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-lbl">品类大方向</div>
+        <div class="chips" id="b-cat-chips">
+          <div class="chip" onclick="toggleB(this,'cat','kitchen')">🍳 厨具 / 餐具</div>
+          <div class="chip" onclick="toggleB(this,'cat','home')">🏠 家居 / 收纳</div>
+          <div class="chip" onclick="toggleB(this,'cat','outdoor')">🏕️ 户外 / 运动</div>
+          <div class="chip" onclick="toggleB(this,'cat','baby')">👶 母婴 / 儿童</div>
+          <div class="chip" onclick="toggleB(this,'cat','beauty')">💄 美妆 / 个护</div>
+          <div class="chip" onclick="toggleB(this,'cat','pet')">🐾 宠物用品</div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-lbl">其他偏好（可选）</div>
+        <input type="text" id="b-pref" placeholder="e.g. 希望客单价€20–€40，供应链广东，有食品级材料优势...">
+      </div>
+      <button class="btn btn-green" onclick="runB2()">开始选品分析 →</button>
+    </div>
+  </div>
+
+  <!-- B Step 2 -->
+  <div id="b2" style="display:none">
+    <div class="card fu">
+      <div class="card-tag">步骤 2 · 细分选品推荐</div>
+      <div class="card-h" id="b2-h">分析中...</div>
+      <div id="b2-loading" class="loading"><div class="spin"></div>AI 正在匹配市场需求与选品机会...</div>
+      <div id="b2-body" style="display:none">
+        <div class="card-sub" id="b2-sub"></div>
+        <div class="sku-list" id="b2-skus"></div>
+        <div class="note">↑ 点击选择一款商品深入分析</div>
+      </div>
+    </div>
+    <div class="card fu" id="b2-comp-card" style="display:none">
+      <div class="card-tag">⚖️ 本市场通用合规要求</div>
+      <div class="comp-list" id="b2-comp"></div>
+    </div>
+    <div class="confirm-bar fu" id="b2-confirm" style="display:none">
+      <div class="icon">✋</div>
+      <div class="txt">
+        <strong>人工确认：选定商品</strong>
+        <span>勾选后生成完整营销策略与上架建议</span>
+      </div>
+      <button class="btn btn-green" id="b2-btn" onclick="runB3()">确认，生成营销策略 →</button>
+    </div>
+  </div>
+
+  <!-- B Step 3 -->
+  <div id="b3" style="display:none">
+    <div class="card fu">
+      <div class="card-tag">步骤 3 · 营销策略</div>
+      <div class="card-h" id="b3-h"></div>
+      <div id="b3-loading" class="loading"><div class="spin"></div>正在生成营销策略...</div>
+      <div id="b3-body" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ─── STATE ─── */
+const S = {
+  a: { sku: '', selMkts: new Set() },
+  b: { mkts: new Set(), cats: new Set(), selSku: null, selSkuName: '' }
+};
+
+/* ─── NAV ─── */
+function show(id) {
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function home() {
+  S.a.selMkts.clear(); S.b.mkts.clear(); S.b.cats.clear(); S.b.selSku = null;
+  ['a2','a3'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  ['b2','b3'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  document.getElementById('a1').style.display='block';
+  document.getElementById('b1').style.display='block';
+  setP('a',1); setP('b',1);
+  show('s-entry');
+}
+function gotoA() { show('s-a'); }
+function gotoB() { show('s-b'); }
+
+/* ─── PROGRESS ─── */
+function setP(prefix, step) {
+  const n = 4;
+  for(let i=1;i<=n;i++){
+    const d = document.getElementById(prefix+'d'+i);
+    const l = document.getElementById(prefix+'l'+i);
+    const line = document.getElementById(prefix+'line'+i);
+    if(!d) continue;
+    if(i < step){ d.className='p-dot done'; d.innerHTML='✓'; }
+    else if(i===step){ d.className='p-dot active'; d.innerHTML=i; }
+    else{ d.className='p-dot pend'; d.innerHTML=i; }
+    if(l){ l.className='p-lbl'+(i===step?' active':''); }
+    if(line){ line.className='p-line'+(i<step?' done':''); }
+  }
+}
+
+/* ─── CHIPS A ─── */
+function pickSku(el, val) {
+  document.getElementById('a-sku').value = val;
+  document.querySelectorAll('#a1 .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ─── CHIPS B ─── */
+function toggleB(el, type, val) {
+  const set = type==='mkt' ? S.b.mkts : S.b.cats;
+  const cls = 'on';
+  if(el.classList.contains(cls)){ el.classList.remove(cls); set.delete(val); }
+  else { el.classList.add(cls); set.add(val); }
+}
+
+/* ═══════════════════════════════════
+   DATA: MARKET ANALYSIS
+═══════════════════════════════════ */
+const MKT_DATA = {
+  '保温杯': [
+    { flag:'🇩🇪', name:'德国', score:88, color:'#22c55e',
+      tags:['t-green|市场规模 €2.1B', 't-amber|竞争中等', 't-blue|CE已满足'],
+      reasons:['近12个月搜索量 +31%，Q4旺季明显','joybuy本地仓支持次日达，配送优势强','CE认证已满足入门要求，补LUCID可上架'],
+      bsrTrend: [55,60,58,65,70,68,75,82,80,88,85,91],
+      topCompetitors: [
+        { name:'Thermos JP-010', share:'18%', price:'€32', rating:'4.6', reviews:8420 },
+        { name:'Stanley Classic', share:'14%', price:'€38', rating:'4.7', reviews:5630 },
+        { name:'SIGG AluMug', share:'9%', price:'€24', rating:'4.4', reviews:3210 },
+      ],
+      gaps: [
+        { icon:'😤', pain:'配送慢（3–5天）', opp:'本地仓次日达是差异化' },
+        { icon:'💬', pain:'标题缺少LFGB认证说明', opp:'补认证后标题CTR +15%' },
+        { icon:'🎁', pain:'没有礼盒套装选项', opp:'圣诞礼盒转化率+22%' },
+      ],
+      profit: { price: 25, cost: 6.5, shipping: 1.2, storage: 0.8, ads: 2.5 }
+    },
+    { flag:'🇬🇧', name:'英国', score:76, color:'#3b82f6',
+      tags:['t-blue|市场规模 €1.4B', 't-amber|竞争较激烈', 't-amber|需UKCA'],
+      reasons:['市场体量大，全年需求稳定','竞争激烈，头部占比高，需差异化策略','需补UKCA认证（建议2026年底前完成）'],
+      bsrTrend: [60,58,62,65,64,68,70,72,75,73,76,78],
+      topCompetitors: [
+        { name:'Hydro Flask 18oz', share:'22%', price:'£35', rating:'4.8', reviews:12800 },
+        { name:'Nalgene Wide Mouth', share:'15%', price:'£18', rating:'4.5', reviews:7400 },
+        { name:'LifeStraw Go', share:'8%', price:'£28', rating:'4.4', reviews:3900 },
+      ],
+      gaps: [
+        { icon:'🎨', pain:'颜色选择单一', opp:'多色套装提升连带购买' },
+        { icon:'📦', pain:'包装不够礼品化', opp:'英国礼品文化强，送礼包装溢价' },
+        { icon:'⚡', pain:'UKCA认证少见', opp:'获证后信任背书大幅提升' },
+      ],
+      profit: { price: 22, cost: 6.5, shipping: 1.5, storage: 0.9, ads: 2.8 }
+    },
+    { flag:'🇸🇪', name:'瑞典', score:71, color:'#3b82f6',
+      tags:['t-blue|低竞争', 't-green|环保溢价+15%', 't-muted|体量偏小'],
+      reasons:['北欧环保趋势驱动，愿意为可持续产品溢价','竞争程度低，头部玩家少，进入窗口期','市场体量约为德国1/4，建议搭配德国铺货'],
+      bsrTrend: [40,42,45,48,47,52,55,58,60,62,65,68],
+      topCompetitors: [
+        { name:'Klean Kanteen 16oz', share:'20%', price:'kr 320', rating:'4.6', reviews:2100 },
+        { name:'Hydro Flask 16oz', share:'16%', price:'kr 380', rating:'4.7', reviews:1800 },
+        { name:'Nalgene Classic', share:'10%', price:'kr 210', rating:'4.3', reviews:900 },
+      ],
+      gaps: [
+        { icon:'🌱', pain:'无碳足迹说明', opp:'北欧消费者极重视可持续数据' },
+        { icon:'♻️', pain:'普通包装', opp:'可降解包装可额外加价 kr 30–50' },
+        { icon:'📊', pain:'缺乏实测数据', opp:'严谨数据展示提升信任' },
+      ],
+      profit: { price: 28, cost: 6.5, shipping: 1.8, storage: 0.7, ads: 1.8 }
+    },
+    { flag:'🇫🇷', name:'法国', score:54, color:'#f59e0b',
+      tags:['t-amber|语言门槛高', 't-amber|仓储覆盖有限', 't-muted|建议观望'],
+      reasons:['法语商品页要求强制执行（托班法）','joybuy法国仓覆盖不全，配送时效差','整体匹配度中等，建议第二阶段再进入'],
+      bsrTrend: [30,32,31,35,34,36,38,37,40,39,42,44],
+      topCompetitors: [
+        { name:'Thermos TCLD', share:'25%', price:'€28', rating:'4.5', reviews:3400 },
+        { name:'Stanley Go Series', share:'12%', price:'€35', rating:'4.6', reviews:2100 },
+        { name:'SIGG Travel Mug', share:'8%', price:'€22', rating:'4.2', reviews:1200 },
+      ],
+      gaps: [
+        { icon:'🇫🇷', pain:'中文品牌知名度低', opp:'法语本地化内容是差异化' },
+        { icon:'🚚', pain:'配送慢，差评多', opp:'改善配送时效是核心门槛' },
+        { icon:'💰', pain:'价格带压力', opp:'利润空间偏薄' },
+      ],
+      profit: { price: 20, cost: 6.5, shipping: 2.2, storage: 1.1, ads: 2.5 }
+    }
+  ],
+  '竹纤维': [
+    { flag:'🇩🇪', name:'德国', score:91, color:'#22c55e', tags:['t-green|搜索量+45%','t-green|环保首选市场','t-amber|LFGB必需'], reasons:['德国是全欧环保消费意识最强市场','可降解商品享平台推荐加权','需LFGB食品接触认证，是核心门槛'], bsrTrend:[40,48,55,62,68,74,78,82,85,88,90,93], topCompetitors:[{name:'Bambus Besteck Co.',share:'15%',price:'€18',rating:'4.7',reviews:4200},{name:'EcoKitchen',share:'10%',price:'€22',rating:'4.5',reviews:2800},{name:'GreenHome',share:'7%',price:'€16',rating:'4.3',reviews:1600}], gaps:[{icon:'🏆',pain:'缺LFGB认证',opp:'获证后信任大幅提升'},{icon:'🎁',pain:'包装不够精致',opp:'礼盒设计提升转化'},{icon:'📦',pain:'只有单品',opp:'家庭套装提升客单价'}], profit:{price:22,cost:3.2,shipping:1.0,storage:0.6,ads:2.0} },
+    { flag:'🇸🇪', name:'瑞典', score:85, color:'#22c55e', tags:['t-green|低竞争','t-green|溢价空间大','t-blue|环保标签效应'], reasons:['北欧消费者为"正确选择"溢价明显','竞争者少，先进者优势大','市场体量小但利润率高达50%+'], bsrTrend:[35,40,46,52,58,63,68,72,76,80,83,86], topCompetitors:[{name:'Bambu Living',share:'18%',price:'kr 220',rating:'4.8',reviews:980},{name:'Nordic Eco',share:'12%',price:'kr 180',rating:'4.5',reviews:650},{name:'GreenScand',share:'8%',price:'kr 200',rating:'4.4',reviews:420}], gaps:[{icon:'🌱',pain:'无环保认证标志',opp:'FSC认证标志提升15%转化'},{icon:'📊',pain:'缺碳足迹数据',opp:'可持续报告是北欧流行趋势'}], profit:{price:26,cost:3.2,shipping:1.5,storage:0.5,ads:1.5} },
+    { flag:'🇬🇧', name:'英国', score:68, color:'#3b82f6', tags:['t-blue|市场增速+28%','t-amber|竞争中等','t-amber|需UKCA'], reasons:['英国环保意识快速提升','竞争中等，有进入空间','UKCA认证是主要门槛'], bsrTrend:[30,33,36,40,42,45,48,51,54,56,59,62], topCompetitors:[{name:'Bambaw',share:'20%',price:'£16',rating:'4.6',reviews:3800},{name:'EcoYou',share:'12%',price:'£20',rating:'4.4',reviews:2100},{name:'Bambu Feasting',share:'8%',price:'£18',rating:'4.3',reviews:1200}], gaps:[{icon:'🎨',pain:'外观单一（原木色）',opp:'彩色款吸引年轻消费者'},{icon:'🎁',pain:'节日礼盒少',opp:'圣诞/母亲节礼盒转化+18%'}], profit:{price:20,cost:3.2,shipping:1.3,storage:0.7,ads:2.2} },
+    { flag:'🇫🇷', name:'法国', score:49, color:'#f59e0b', tags:['t-amber|语言合规复杂','t-muted|仓储不全','t-muted|暂不推荐'], reasons:['法语强制合规是主要障碍','仓储覆盖有限影响时效','品牌认知度低，开拓成本高'], bsrTrend:[20,22,24,26,25,28,30,29,32,31,34,36], topCompetitors:[{name:'Biobu',share:'22%',price:'€16',rating:'4.5',reviews:1800},{name:'EcoLiving',share:'14%',price:'€19',rating:'4.3',reviews:1100},{name:'ZeroWaste',share:'9%',price:'€14',rating:'4.2',reviews:700}], gaps:[{icon:'🇫🇷',pain:'无法语页面',opp:'高质量法语内容是差异化'}], profit:{price:18,cost:3.2,shipping:2.0,storage:1.0,ads:2.5} }
+  ],
+  '铸铁锅': [
+    { flag:'🇩🇪', name:'德国', score:82, color:'#22c55e', tags:['t-green|高客单价€60+','t-green|LFGB已满足','t-amber|物流成本偏高'], reasons:['德国厨具消费力强，铸铁锅客单价高','LFGB认证直接满足德国要求','重物品仓储成本较高，需计入利润'], bsrTrend:[50,52,55,58,60,63,65,68,70,73,76,80], topCompetitors:[{name:'Le Creuset 24cm',share:'28%',price:'€180',rating:'4.9',reviews:15200},{name:'Staub Cocotte',share:'20%',price:'€150',rating:'4.8',reviews:9800},{name:'Lodge Enamel',share:'12%',price:'€65',rating:'4.6',reviews:6400}], gaps:[{icon:'💰',pain:'Le Creuset价格高不可及',opp:'€60–80价格带严重供给不足'},{icon:'🎨',pain:'颜色选择少',opp:'多色差异化，北欧蓝/森林绿有需求'},{icon:'📦',pain:'包装破损投诉多',opp:'加强包装是低成本差评防御'}], profit:{price:68,cost:18,shipping:4.5,storage:3.2,ads:5.0} },
+    { flag:'🇫🇷', name:'法国', score:78, color:'#3b82f6', tags:['t-blue|烹饪文化强','t-amber|法语合规','t-amber|体量中等'], reasons:['法国烹饪文化深厚，铸铁锅高接受度','法语页面要求是主要障碍','客单价€60+，利润空间充足'], bsrTrend:[48,50,53,55,58,60,63,65,68,70,73,76], topCompetitors:[{name:'Le Creuset',share:'35%',price:'€160',rating:'4.9',reviews:12000},{name:'Staub',share:'22%',price:'€140',rating:'4.8',reviews:8200},{name:'Invicta',share:'8%',price:'€75',rating:'4.4',reviews:2400}], gaps:[{icon:'💰',pain:'高端品占满>€120段',opp:'€55–80实惠品质段空白'},{icon:'🇫🇷',pain:'无本地化内容',opp:'法语食谱内容增加粘性'}], profit:{price:65,cost:18,shipping:4.8,storage:3.5,ads:5.5} },
+    { flag:'🇬🇧', name:'英国', score:70, color:'#3b82f6', tags:['t-blue|烘焙需求强','t-amber|需UKCA','t-muted|竞争一般'], reasons:['英国烘焙文化推动铸铁锅需求','UKCA认证是门槛但可在认证期内进行','竞争强度中等，进入空间存在'], bsrTrend:[42,44,46,48,50,52,54,56,58,60,63,66], topCompetitors:[{name:'Le Creuset UK',share:'30%',price:'£120',rating:'4.9',reviews:8900},{name:'Denby',share:'15%',price:'£80',rating:'4.5',reviews:4100},{name:'ProCook',share:'10%',price:'£55',rating:'4.3',reviews:2800}], gaps:[{icon:'💰',pain:'£50–80区间竞争弱',opp:'性价比切入英国市场'},{icon:'🎁',pain:'无礼盒选项',opp:'英国送礼文化，礼盒版溢价'}], profit:{price:62,cost:18,shipping:4.2,storage:3.0,ads:5.0} },
+    { flag:'🇸🇪', name:'瑞典', score:58, color:'#f59e0b', tags:['t-muted|市场偏小','t-amber|竞争一般','t-muted|建议观望'], reasons:['铸铁锅在瑞典属于小众需求','物流成本高，利润率被压缩','建议优先德法市场站稳再考虑'], bsrTrend:[25,26,28,27,30,29,32,31,34,33,36,38], topCompetitors:[{name:'Skeppshult',share:'30%',price:'kr 800',rating:'4.7',reviews:620},{name:'Le Creuset',share:'20%',price:'kr 1800',rating:'4.9',reviews:480}], gaps:[{icon:'💰',pain:'kr 500–700价格带有空白',opp:'本土品牌贵，进口中档品机会'}], profit:{price:55,cost:18,shipping:5.5,storage:3.8,ads:4.0} }
+  ],
+  default: [
+    { flag:'🇩🇪', name:'德国', score:72, color:'#3b82f6', tags:['t-blue|欧洲最大市场','t-amber|合规要求中等'], reasons:['欧洲电商市场体量最大','joybuy本地仓优势','需LUCID包装注册'], bsrTrend:[50,52,54,56,58,60,62,64,66,68,70,72], topCompetitors:[], gaps:[], profit:{price:25,cost:7,shipping:1.5,storage:1.0,ads:2.5} },
+    { flag:'🇬🇧', name:'英国', score:66, color:'#3b82f6', tags:['t-blue|高购买力','t-amber|UKCA认证'], reasons:['英国消费者网购习惯强','脱欧后需UKCA认证','竞争相对激烈'], bsrTrend:[45,47,49,50,52,54,55,57,59,60,62,64], topCompetitors:[], gaps:[], profit:{price:22,cost:7,shipping:1.8,storage:1.1,ads:2.8} },
+    { flag:'🇸🇪', name:'瑞典', score:61, color:'#3b82f6', tags:['t-green|环保溢价','t-blue|低竞争'], reasons:['北欧环保偏好强','竞争少但体量小','搭配德国铺货效率高'], bsrTrend:[30,32,34,35,37,39,41,43,45,47,49,51], topCompetitors:[], gaps:[], profit:{price:28,cost:7,shipping:2.0,storage:0.8,ads:2.0} },
+    { flag:'🇫🇷', name:'法国', score:48, color:'#f59e0b', tags:['t-amber|语言门槛','t-muted|建议观望'], reasons:['法语强制合规门槛高','仓储覆盖有限','建议第二阶段再进入'], bsrTrend:[25,26,27,28,27,29,30,31,30,32,33,34], topCompetitors:[], gaps:[], profit:{price:20,cost:7,shipping:2.2,storage:1.2,ads:2.5} }
+  ]
+};
+
+const COMP_DATA = {
+  '保温杯': [
+    {level:'ok',icon:'✅',title:'CE 认证已满足欧盟入门要求',sub:'可在欧盟27国直接销售，无需重新申请'},
+    {level:'danger',icon:'🔴',title:'德国 LUCID 包装注册（必须完成）',sub:'所有在德国销售带包装商品须注册，逾期罚款最高€10万 · 处理时间约30分钟，年费约€80'},
+    {level:'warn',icon:'🟡',title:'英国 UKCA 认证（若进英国市场）',sub:'脱欧后CE在英国不适用，需单独申请 · 周期约4–6周，建议提前启动'},
+    {level:'warn',icon:'🟡',title:'推荐：LFGB 食品级认证（德国加分项）',sub:'保温杯装饮料属食品接触，LFGB认证可提升CTR约15% · 非强制但竞争加分'},
+  ],
+  '竹纤维': [
+    {level:'danger',icon:'🔴',title:'LFGB 食品接触认证（必须）',sub:'竹纤维餐具直接接触食物，德国要求LFGB合规，无认证不得上架 · 申请周期3–4周'},
+    {level:'danger',icon:'🔴',title:'德国 LUCID 包装注册',sub:'所有包装商品必须完成，同上'},
+    {level:'ok',icon:'✅',title:'CE 认证豁免（非电气类厨具）',sub:'纯竹制餐具不需要CE认证，合规门槛相对低'},
+    {level:'warn',icon:'🟡',title:'英国食品接触材料声明（若进英国）',sub:'需提供符合英国食品接触法规的材料合规声明'},
+  ],
+  '铸铁锅': [
+    {level:'ok',icon:'✅',title:'LFGB 认证已满足食品接触要求',sub:'德国、法国市场均可直接使用，无需额外认证'},
+    {level:'danger',icon:'🔴',title:'德国 LUCID 包装注册',sub:'必须完成，同上'},
+    {level:'warn',icon:'🟡',title:'法国托班法（若进法国）',sub:'商品页面法语内容须≥60%，强制执行中 · 建议提前准备本地化翻译'},
+    {level:'warn',icon:'🟡',title:'重物包装合规',sub:'铸铁锅属重物品，需加强包装防护，降低运输破损和差评风险'},
+  ],
+  default: [
+    {level:'danger',icon:'🔴',title:'德国 LUCID 包装注册',sub:'所有在德国销售带包装商品必须注册，年费约€80'},
+    {level:'warn',icon:'🟡',title:'英国 UKCA（若进英国）',sub:'CE在英国不适用，电子机械类必须申请UKCA'},
+    {level:'warn',icon:'🟡',title:'法国托班法（若进法国）',sub:'商品页面法语占比须≥60%'},
+    {level:'ok',icon:'✅',title:'REACH 法规（欧盟通用）',sub:'未使用SVHC高关注物质则自动合规，建议保留检测报告备查'},
+  ]
+};
+
+/* ═══════════════════════════════════
+   HELPERS
+═══════════════════════════════════ */
+function getSkuKey(sku) {
+  if(/保温杯|水杯|thermos/i.test(sku)) return '保温杯';
+  if(/竹|bamboo/i.test(sku)) return '竹纤维';
+  if(/铸铁|珐琅|cast/i.test(sku)) return '铸铁锅';
+  return 'default';
+}
+
+function renderSparkline(data, color) {
+  const max = Math.max(...data);
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const bars = data.map((v,i) => {
+    const h = Math.round((v/max)*36)+4;
+    return `<div class="sp-bar" style="height:${h}px;background:${color};opacity:${0.4+0.6*(v/max)}" title="${months[i]}: ${v}"></div>`;
+  }).join('');
+  return `<div class="sparkline-lbl">BSR 趋势（近12个月，越高越好）</div><div class="sparkline">${bars}</div>`;
+}
+
+function renderCompetitors(comps) {
+  if(!comps||!comps.length) return '';
+  const rows = comps.map(c=>`
+    <tr>
+      <td style="padding:7px 10px;font-weight:600">${c.name}</td>
+      <td style="padding:7px 10px"><span class="tag t-blue">${c.share}</span></td>
+      <td style="padding:7px 10px">${c.price}</td>
+      <td style="padding:7px 10px">⭐ ${c.rating}</td>
+      <td style="padding:7px 10px;color:var(--muted2)">${c.reviews.toLocaleString()} 条评价</td>
+    </tr>
+  `).join('');
+  return `
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="color:var(--muted);font-size:10px;text-transform:uppercase">
+        <th style="padding:5px 10px;text-align:left">竞品</th>
+        <th style="padding:5px 10px;text-align:left">市占率</th>
+        <th style="padding:5px 10px;text-align:left">售价</th>
+        <th style="padding:5px 10px;text-align:left">评分</th>
+        <th style="padding:5px 10px;text-align:left">评价量</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderGaps(gaps) {
+  if(!gaps||!gaps.length) return '';
+  return `<div class="gap-list">${gaps.map(g=>`
+    <div class="gap-item">
+      <div class="gap-icon">${g.icon}</div>
+      <div class="gap-txt">竞品痛点：${g.pain}</div>
+      <div class="gap-opp">→ ${g.opp}</div>
+    </div>
+  `).join('')}</div>`;
+}
+
+function renderProfit(p) {
+  const net = (p.price - p.cost - p.shipping - p.storage - p.ads).toFixed(1);
+  const margin = Math.round((net/p.price)*100);
+  const currency = p.price > 50 ? '€' : '€';
+  return `
+    <div class="profit-row"><div class="profit-lbl">建议售价</div><div class="profit-val">${currency}${p.price.toFixed(2)}</div></div>
+    <div class="profit-row"><div class="profit-lbl">商品成本（含头程运费）</div><div class="profit-val" style="color:var(--red)">- €${p.cost.toFixed(2)}</div></div>
+    <div class="profit-row"><div class="profit-lbl">末端配送费</div><div class="profit-val" style="color:var(--red)">- €${p.shipping.toFixed(2)}</div></div>
+    <div class="profit-row"><div class="profit-lbl">仓储费（月均）</div><div class="profit-val" style="color:var(--red)">- €${p.storage.toFixed(2)}</div></div>
+    <div class="profit-row"><div class="profit-lbl">广告费（CPC预估）</div><div class="profit-val" style="color:var(--red)">- €${p.ads.toFixed(2)}</div></div>
+    <div class="profit-total"><span>预估净利润/件</span><span>€${net} <span style="font-size:13px;opacity:0.7">利润率 ${margin}%</span></span></div>
+  `;
+}
+
+/* ═══════════════════════════════════
+   MODE A LOGIC
+═══════════════════════════════════ */
+function runA2() {
+  const sku = document.getElementById('a-sku').value.trim();
+  if(!sku){ document.getElementById('a-sku').focus(); return; }
+  S.a.sku = sku; S.a.selMkts.clear();
+  document.getElementById('a1').style.display='none';
+  document.getElementById('a2').style.display='block';
+  document.getElementById('a2-loading').style.display='flex';
+  document.getElementById('a2-body').style.display='none';
+  document.getElementById('a2-comp-card').style.display='none';
+  document.getElementById('a2-confirm').style.display='none';
+  setP('a',2);
+  setTimeout(()=>buildA2(sku), 1600);
+}
+
+function buildA2(sku) {
+  const key = getSkuKey(sku);
+  const mkts = MKT_DATA[key] || MKT_DATA.default;
+  const comp = COMP_DATA[key] || COMP_DATA.default;
+  const label = key==='default' ? sku.slice(0,14) : key;
+
+  document.getElementById('a2-h').textContent = `「${label}」欧洲市场评估报告`;
+  document.getElementById('a2-sub').textContent = '基于 joybuy 销售数据与欧洲市场洞察，下方展示各市场匹配度评分、竞争格局与利润预测：';
+
+  const container = document.getElementById('a2-markets');
+  container.innerHTML = '';
+  mkts.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'mkt-row';
+
+    const tagHtml = m.tags.map(t=>{
+      const [cls,txt]=t.split('|');
+      return `<span class="tag ${cls}">${txt}</span>`;
+    }).join('');
+
+    const scoreColor = m.score>=80?'#22c55e':m.score>=65?'#3b82f6':'#f59e0b';
+    div.innerHTML = `
+      <div class="mkt-flag">${m.flag}</div>
+      <div class="mkt-body">
+        <div class="mkt-name">${m.name}</div>
+        <div class="mkt-score-line">
+          <div class="bar-wrap"><div class="bar-fill" style="width:${m.score}%;background:${scoreColor}"></div></div>
+          <div class="mkt-score-num" style="color:${scoreColor}">${m.score}</div>
+        </div>
+        <div class="mkt-tags">${tagHtml}</div>
+        <div class="mkt-reason">${m.reasons.map(r=>'· '+r).join('<br>')}</div>
+
+        <!-- 可展开的详细分析 -->
+        <div class="mkt-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <div class="sparkline-wrap">${renderSparkline(m.bsrTrend, scoreColor)}</div>
+            </div>
+            <div>
+              <div class="field-lbl" style="margin-bottom:8px">💰 利润预估（每件）</div>
+              ${renderProfit(m.profit)}
+            </div>
+          </div>
+          ${m.topCompetitors && m.topCompetitors.length ? `
+            <div style="margin-bottom:12px">
+              <div class="field-lbl" style="margin-bottom:6px">🏆 当前头部竞品</div>
+              ${renderCompetitors(m.topCompetitors)}
+            </div>` : ''}
+          ${m.gaps && m.gaps.length ? `
+            <div>
+              <div class="field-lbl" style="margin-bottom:6px">💬 评论缺口分析（你的机会）</div>
+              ${renderGaps(m.gaps)}
+            </div>` : ''}
+        </div>
+      </div>
+      <div class="mkt-check"></div>
+    `;
+
+    // toggle detail on body click
+    div.querySelector('.mkt-body').addEventListener('click', e=>{
+      if(e.target.closest('.mkt-check')) return;
+      const detail = div.querySelector('.mkt-detail');
+      detail.style.display = detail.style.display==='none' ? 'block' : 'none';
+    });
+
+    // checkbox
+    div.querySelector('.mkt-check').addEventListener('click', e=>{
+      e.stopPropagation();
+      div.classList.toggle('sel');
+      const chk = div.querySelector('.mkt-check');
+      if(div.classList.contains('sel')){ S.a.selMkts.add(m.name); chk.textContent='✓'; }
+      else { S.a.selMkts.delete(m.name); chk.textContent=''; }
+      updateA2btn();
+    });
+
+    container.appendChild(div);
+  });
+
+  // compliance
+  document.getElementById('a2-comp').innerHTML = comp.map(c=>`
+    <div class="comp-item ${c.level}">
+      <div class="comp-icon">${c.icon}</div>
+      <div><div class="comp-title">${c.title}</div><div class="comp-sub">${c.sub}</div></div>
+    </div>
+  `).join('');
+
+  document.getElementById('a2-loading').style.display='none';
+  document.getElementById('a2-body').style.display='block';
+  document.getElementById('a2-comp-card').style.display='block';
+  document.getElementById('a2-confirm').style.display='flex';
+  document.getElementById('a2-btn').disabled=true;
+}
+
+function updateA2btn() {
+  const btn = document.getElementById('a2-btn');
+  if(S.a.selMkts.size>0){
+    btn.disabled=false;
+    btn.textContent=`确认进入：${[...S.a.selMkts].join('、')} →`;
+  } else {
+    btn.disabled=true;
+    btn.textContent='请先勾选市场';
+  }
+}
+
+function runA3() {
+  if(S.a.selMkts.size===0) return;
+  document.getElementById('a2').style.display='none';
+  document.getElementById('a3').style.display='block';
+  const mkts=[...S.a.selMkts].join('、');
+  document.getElementById('a3-h').textContent=`「${S.a.sku.slice(0,16)}」× ${mkts} 运营落地方案`;
+  document.getElementById('a3-loading').style.display='flex';
+  document.getElementById('a3-body').style.display='none';
+  setP('a',4);
+  setTimeout(()=>buildA3(mkts), 1800);
+}
+
+function buildA3(mkts) {
+  const key = getSkuKey(S.a.sku);
+  const isDE=mkts.includes('德国'), isUK=mkts.includes('英国'), isSE=mkts.includes('瑞典');
+  const isBotl=key==='保温杯', isBamb=key==='竹纤维', isCast=key==='铸铁锅';
+
+  const titleDE = isBotl?'"500ml Edelstahl Thermosflasche – LFGB zertifiziert, BPA-frei, 12h warm / 24h kalt"'
+    : isBamb?'"Bambus Besteck-Set 5-teilig – BPA-frei, LFGB zertifiziert, kompostierbar"'
+    : '"Gusseisen Topf 24cm – LFGB zertifiziert, für alle Herdarten geeignet"';
+  const titleUK = isBotl?'"500ml Insulated Stainless Steel Bottle – UKCA, BPA Free, 12h Hot/24h Cold"'
+    : isBamb?'"Bamboo Cutlery Set 5-piece – BPA Free, Biodegradable, Eco-Friendly"'
+    : '"24cm Cast Iron Casserole with Lid – Induction Ready, PFAS Free"';
+  const titleSE = isBotl?'"500ml Rostfri Termos – BPA-fri, Hållbar, 12h varm / 24h kall"'
+    : isBamb?'"Bambu Bestick 5-delar – Ekologiskt, Komposterbart, BPA-fri"'
+    : '"Gjutjärnsgryta 24cm – Miljövänlig, för alla spishällar"';
+
+  const priceNote = isDE
+    ? (isBotl?'€22–€28':'isBamb'?'€18–€24':isCast?'€62–€75':'€20–€28')
+    : isUK?(isBotl?'£18–£24':isBamb?'£16–£22':isCast?'£52–£68':'£18–£26')
+    : (isBotl?'€25–€32':isBamb?'€22–€28':isCast?'€55–€68':'€22–€30');
+
+  const html=`
+    <div class="strat-section">
+      <div class="strat-h">📝 商品标题建议</div>
+      ${isDE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇩🇪 <strong>德国</strong>：${titleDE}</div></div>`:''}
+      ${isUK?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇬🇧 <strong>英国</strong>：${titleUK}</div></div>`:''}
+      ${isSE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇸🇪 <strong>瑞典</strong>：${titleSE}</div></div>`:''}
+      <div class="strat-item"><div class="strat-dot">▸</div><div>关键词逻辑：核心品类词 + 材质/认证 + 核心卖点 + 规格，总长度控制在 80 字符内</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">💰 定价策略</div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div><strong>目标售价：</strong>${priceNote}</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>启动期（前 2–4 周）：以区间低值跑量，目标累积 50 条评价后提价至目标区间</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>心理锚点：设置划线原价，突出"节省 €X"，配合限时标签提升转化率</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>礼盒选项：欧洲节日礼购场景高频（圣诞/母亲节），礼盒版可溢价 15–20%</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">🛒 卖点排序（按本地消费者优先级）</div>
+      ${isDE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇩🇪 德国：① 材质安全认证 → ② 性能参数实测数据 → ③ 环保包装 → ④ 外观颜色</div></div>`:''}
+      ${isUK?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇬🇧 英国：① 外观颜值+配色 → ② 便携实用性 → ③ 礼品化包装 → ④ 认证说明</div></div>`:''}
+      ${isSE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇸🇪 瑞典：① 可持续材料认证 → ② 碳足迹说明 → ③ 简约设计 → ④ 功能性</div></div>`:''}
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">📸 主图与详情页</div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>主图：白底全貌 + 使用场景图（厨房/户外）+ 认证标识特写</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>详情页第一屏必须包含认证图标（LFGB/BPA-free/CE），消费者决策前必看</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>${isDE?'德国消费者重视实测数据，建议放保温时间真实测试图，不只是文字':''}${isUK?'英国消费者重视颜值，多放生活场景图，主图最好有人物':''}${isSE?'北欧消费者关注可持续数据，建议详情页放碳足迹报告截图':''}</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">📦 物流与售后</div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>joybuy ${isDE?'德国本地仓，支持次日达':isUK?'英国本地仓（Milton Keynes），支持次日达':'欧洲仓，3–5 工作日配送'}</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>页面明确标注"次日达"或具体配送时效，这是对比 Amazon 的核心差异化卖点</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>售后承诺：主动写明"30天无理由退换"（欧盟法定14天，超额承诺是信任加分项）</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">📋 上架前行动清单</div>
+      ${isDE?`
+        <div class="comp-item danger"><div class="comp-icon">🔴</div><div><div class="comp-title">立即完成：LUCID 包装注册</div><div class="comp-sub">登录 lucid.de，填写上年度包装重量，缴年费约€80，约30分钟完成</div></div></div>
+        <div class="comp-item warn"><div class="comp-icon">🟡</div><div><div class="comp-title">建议完成：LFGB 认证</div><div class="comp-sub">联系 SGS/TÜV/Intertek，周期3–4周，费用约¥3000–6000</div></div></div>
+        <div class="comp-item ok"><div class="comp-icon">✅</div><div><div class="comp-title">已具备：CE 认证</div><div class="comp-sub">欧盟市场入门条件已满足</div></div></div>
+      `:''}
+      ${isUK&&!isDE?`
+        <div class="comp-item danger"><div class="comp-icon">🔴</div><div><div class="comp-title">必须完成：UKCA 认证</div><div class="comp-sub">联系英国授权认证机构，周期4–6周，CE不适用于英国</div></div></div>
+        <div class="comp-item ok"><div class="comp-icon">✅</div><div><div class="comp-title">已具备：CE（欧盟市场可用）</div></div></div>
+      `:''}
+      <div class="comp-item ok"><div class="comp-icon">✅</div><div><div class="comp-title">首批备货建议：300–500 件</div><div class="comp-sub">先测数据再决定补货量，避免积压</div></div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost btn-sm" onclick="home()">← 重新开始</button>
+    </div>
+  `;
+  document.getElementById('a3-loading').style.display='none';
+  document.getElementById('a3-body').innerHTML=html;
+  document.getElementById('a3-body').style.display='block';
+}
+
+/* ═══════════════════════════════════
+   MODE B DATA
+═══════════════════════════════════ */
+const SKU_DATA = {
+  kitchen: [
+    { rank:1, name:'竹制可降解餐具套装（5件）', tags:['t-green|搜索量 +45%','t-amber|客单价 €18–€28','t-blue|低竞争入门'],
+      reason:'竹纤维餐具在德国/瑞典的环保消费趋势驱动下增速最快，头部卖家少，进入窗口期尚未关闭。主要门槛是LFGB食品级认证（申请周期3–4周）。',
+      metrics:{ vol:'月搜索量 38K', growth:'+45%', margin:'42%', comp:'中低' },
+      bsrTrend:[40,48,55,62,68,74,78,82,85,88,90,93],
+      gaps:[{icon:'🏆',pain:'现有竞品无LFGB认证标注',opp:'获证后在标题注明，CTR显著提升'},{icon:'🎁',pain:'包装不够礼品化',opp:'精品礼盒设计，节日转化+22%'},{icon:'📦',pain:'单品为主，SKU少',opp:'家庭套装提升客单价'}]
+    },
+    { rank:2, name:'硅胶分隔保鲜盒套组（5件）', tags:['t-green|复购率高','t-amber|客单价 €22–€35','t-blue|利润率38%'],
+      reason:'居家收纳+减少塑料使用双重趋势。硅胶材质比玻璃轻，适合本地仓发货，BPA-free是核心背书词，门槛相对低。',
+      metrics:{ vol:'月搜索量 52K', growth:'+28%', margin:'38%', comp:'中等' },
+      bsrTrend:[35,38,42,45,48,52,55,58,60,63,66,70],
+      gaps:[{icon:'🎨',pain:'颜色选择单调',opp:'多色系吸引年轻消费者'},{icon:'📐',pain:'缺乏尺寸组合',opp:'大中小套装满足不同需求'}]
+    },
+    { rank:3, name:'不锈钢分格便当盒（双层）', tags:['t-amber|客单价 €25–€38','t-muted|竞争中等'],
+      reason:'欧洲上班族带饭文化回潮，不锈钢便当盒近半年搜索量+22%。重量适中，客单价可覆盖仓储成本，已有CE认证可直接上架。',
+      metrics:{ vol:'月搜索量 21K', growth:'+22%', margin:'35%', comp:'中等' },
+      bsrTrend:[25,27,30,33,35,38,40,43,45,48,50,53],
+      gaps:[{icon:'🔥',pain:'保温功能弱',opp:'双层隔热设计是差异化'},{icon:'🎁',pain:'无配件组合',opp:'含餐具套装提升连带'}]
+    }
+  ],
+  home: [
+    { rank:1, name:'竹制桌面收纳套装（笔筒+托盘）', tags:['t-green|增速 +38%','t-amber|客单价 €20–€32','t-blue|低竞争'],
+      reason:'居家办公持续增长，桌面整洁需求旺盛。竹材料在德国/英国有天然好感度，套组销售提升客单价，合规门槛低。',
+      metrics:{ vol:'月搜索量 29K', growth:'+38%', margin:'45%', comp:'低' },
+      bsrTrend:[30,34,38,42,46,50,54,58,61,64,67,70],
+      gaps:[{icon:'🎨',pain:'外观设计同质化',opp:'北欧简约风差异化'},{icon:'📦',pain:'单件销售',opp:'套装组合提升30%客单价'}]
+    },
+    { rank:2, name:'硅胶多功能厨房挂钩套件', tags:['t-amber|客单价 €12–€18','t-green|合规门槛低'],
+      reason:'安装无损伤、高承重，欧洲租房比例高（德国约55%为租房者），不能打孔的需求刚性强。',
+      metrics:{ vol:'月搜索量 44K', growth:'+18%', margin:'40%', comp:'中低' },
+      bsrTrend:[40,42,44,46,48,50,52,54,56,58,60,62],
+      gaps:[{icon:'🏠',pain:'承重标注不清',opp:'明确标注承重数据，转化+12%'},{icon:'🔧',pain:'安装说明复杂',opp:'配二维码视频教程'}]
+    },
+    { rank:3, name:'麻布收纳篮（大/中/小三件套）', tags:['t-amber|客单价 €25–€40','t-blue|北欧风热门'],
+      reason:'北欧极简风持续流行，天然麻布符合可持续消费趋势。套组销售毛利率可达45%，季节性不明显，全年稳定。',
+      metrics:{ vol:'月搜索量 18K', growth:'+15%', margin:'45%', comp:'低' },
+      bsrTrend:[22,24,26,28,30,32,34,36,38,40,42,44],
+      gaps:[{icon:'🌿',pain:'无材质认证说明',opp:'FSC或天然材质认证提升信任'},{icon:'🎨',pain:'颜色单调',opp:'莫兰迪色系受北欧消费者欢迎'}]
+    }
+  ],
+  outdoor: [
+    { rank:1, name:'不锈钢保温杯 600ml（宽口徒步款）', tags:['t-green|月销量 +29%','t-amber|客单价 €28–€45','t-green|高毛利'],
+      reason:'徒步/骑行文化在德国/瑞典强劲，宽口+大容量是差异化卖点，与普通保温杯区隔明显，竞争压力小30%。',
+      metrics:{ vol:'月搜索量 33K', growth:'+29%', margin:'40%', comp:'中低' },
+      bsrTrend:[35,38,42,46,50,54,58,62,66,70,74,78],
+      gaps:[{icon:'🎒',pain:'无挂扣设计',opp:'兼容背包挂扣是徒步刚需'},{icon:'🌈',pain:'颜色少',opp:'户外风撞色款有溢价空间'}]
+    },
+    { rank:2, name:'折叠硅胶水杯（便携旅行款）', tags:['t-amber|客单价 €12–€18','t-blue|创新品类'],
+      reason:'环保可折叠，旅行用户复购意愿高，市场教育期已过，增速稳定+15%，进入壁垒不高，适合低成本试水。',
+      metrics:{ vol:'月搜索量 26K', growth:'+15%', margin:'50%', comp:'低' },
+      bsrTrend:[28,30,32,34,36,38,40,42,44,46,48,50],
+      gaps:[{icon:'💧',pain:'容量标注不清',opp:'明确标注ml容量，减少退货'},{icon:'🎁',pain:'无套装',opp:'配2–3个颜色套装礼盒'}]
+    },
+    { rank:3, name:'户外营地灯（USB-C充电，三档亮度）', tags:['t-amber|客单价 €22–€38','t-amber|需CE认证'],
+      reason:'露营文化后疫情复苏明显，电子产品门槛较高但有CE认证后壁垒强，竞争品质参差，做好品控可快速建立优势。',
+      metrics:{ vol:'月搜索量 41K', growth:'+35%', margin:'35%', comp:'中等' },
+      bsrTrend:[30,34,38,43,47,52,56,61,65,69,73,77],
+      gaps:[{icon:'⚡',pain:'USB-C充电少见',opp:'现有竞品多为Micro-USB，升级版有溢价'},{icon:'🌧️',pain:'防水等级不明',opp:'标注IP65等级，户外消费者更放心'}]
+    }
+  ],
+  baby: [
+    { rank:1, name:'天然橡木婴儿玩具套装（积木）', tags:['t-green|安全溢价强','t-amber|客单价 €28–€45'],
+      reason:'天然材料安全是欧洲母婴第一关注点，需EN71认证，门槛较高但利润丰厚，客单价溢价30%以上。',
+      metrics:{ vol:'月搜索量 22K', growth:'+20%', margin:'45%', comp:'中低' },
+      bsrTrend:[25,27,30,33,36,39,42,45,48,51,54,57],
+      gaps:[{icon:'🎨',pain:'颜色仅原木色',opp:'天然染料彩色款受欢迎'},{icon:'🏆',pain:'无FSC认证',opp:'FSC认证木材是信任加分项'}]
+    },
+    { rank:2, name:'有机棉婴儿浴巾套组', tags:['t-green|复购型','t-amber|客单价 €20–€35'],
+      reason:'有机棉认证（GOTS）是敲门砖，德国妈妈群体对认证要求极严格，通过认证后进入壁垒高，忠诚度也高。',
+      metrics:{ vol:'月搜索量 18K', growth:'+17%', margin:'42%', comp:'中低' },
+      bsrTrend:[22,24,26,28,30,32,34,36,38,40,42,44],
+      gaps:[{icon:'🏅',pain:'GOTS认证者少',opp:'获证后在细分市场可快速占位'},{icon:'🎁',pain:'礼盒少',opp:'婴儿送礼高频，礼盒版溢价'}]
+    },
+    { rank:3, name:'食品级硅胶辅食套装（碗+勺+叉）', tags:['t-amber|客单价 €22–€32','t-blue|搜索量 +31%'],
+      reason:'婴儿辅食期高频消费，父母对食品安全敏感度最高，BPA-free+LFGB是两张必备门票，获证后竞争壁垒强。',
+      metrics:{ vol:'月搜索量 27K', growth:'+31%', margin:'40%', comp:'中等' },
+      bsrTrend:[28,31,34,37,40,43,46,49,52,55,58,61],
+      gaps:[{icon:'🌈',pain:'颜色单调',opp:'莫兰迪柔和色系受年轻父母欢迎'},{icon:'📦',pain:'无配套礼盒',opp:'满月/百天礼盒是高频场景'}]
+    }
+  ],
+  pet: [
+    { rank:1, name:'硅胶便携宠物饮水器（折叠碗+挂扣）', tags:['t-green|增速 +52%','t-amber|客单价 €12–€20','t-blue|低门槛'],
+      reason:'宠物户外消费是欧洲增速最快子类目，低合规门槛+高频复购，德国英国均有成熟需求，适合快速切入。',
+      metrics:{ vol:'月搜索量 48K', growth:'+52%', margin:'50%', comp:'低' },
+      bsrTrend:[38,43,48,54,60,65,70,74,78,82,86,90],
+      gaps:[{icon:'🐕',pain:'大型犬容量不足',opp:'500ml大容量款填补空白'},{icon:'🌈',pain:'颜色单调',opp:'宠物主人偏好可爱配色'}]
+    },
+    { rank:2, name:'竹制宠物食盆（双碗架）', tags:['t-green|环保溢价','t-amber|客单价 €18–€28'],
+      reason:'竹材料+宠物食具双趋势叠加，欧洲宠物主人对材质安全重视程度不亚于母婴，竞争较少。',
+      metrics:{ vol:'月搜索量 19K', growth:'+25%', margin:'45%', comp:'低' },
+      bsrTrend:[18,21,24,27,30,33,36,39,42,45,48,51],
+      gaps:[{icon:'🔧',pain:'高度不可调节',opp:'可调节碗架高度满足不同犬种'},{icon:'🎨',pain:'外观单一',opp:'北欧木质风格受欢迎'}]
+    },
+    { rank:3, name:'可水洗宠物牵引绳（夜间反光款）', tags:['t-amber|客单价 €15–€25','t-blue|功能差异化'],
+      reason:'反光安全条是北欧冬天长夜的刚需（瑞典冬季仅6小时日照），功能性差异化明显，竞品较少主打此卖点。',
+      metrics:{ vol:'月搜索量 31K', growth:'+19%', margin:'45%', comp:'中低' },
+      bsrTrend:[28,30,32,34,36,38,40,42,44,46,48,50],
+      gaps:[{icon:'🌙',pain:'无反光设计',opp:'夜间安全是北欧冬季刚需'},{icon:'📏',pain:'仅固定长度',opp:'可伸缩款提升30%溢价'}]
+    }
+  ],
+  beauty: [
+    { rank:1, name:'竹炭洗颜皂（天然有机认证）', tags:['t-green|增速 +33%','t-amber|客单价 €12–€20','t-blue|低竞争'],
+      reason:'欧洲消费者对天然有机护肤品需求持续增长，竹炭成分具有差异化，但需注意欧盟化妆品法规（EC 1223/2009）。',
+      metrics:{ vol:'月搜索量 24K', growth:'+33%', margin:'55%', comp:'低' },
+      bsrTrend:[20,23,26,29,33,37,41,45,49,52,56,60],
+      gaps:[{icon:'🏅',pain:'缺乏有机认证',opp:'COSMOS/Ecocert认证大幅提升信任'},{icon:'🌿',pain:'成分表不透明',opp:'全成分公示是欧洲消费者期望'}]
+    },
+    { rank:2, name:'玫瑰水补水喷雾（100ml旅行装）', tags:['t-amber|客单价 €10–€16','t-green|复购型'],
+      reason:'旅行装复购率高，玫瑰水成分知名度高，市场接受度好，欧盟化妆品合规是主要门槛但流程清晰。',
+      metrics:{ vol:'月搜索量 38K', growth:'+21%', margin:'60%', comp:'中等' },
+      bsrTrend:[32,34,36,38,40,42,44,46,48,50,52,54],
+      gaps:[{icon:'♻️',pain:'塑料瓶被诟病',opp:'铝罐/玻璃瓶环保溢价明显'},{icon:'🌹',pain:'玫瑰产地不明',opp:'保加利亚玫瑰原产地背书'}]
+    },
+    { rank:3, name:'竹柄天然猪鬃发刷', tags:['t-amber|客单价 €15–€25','t-blue|环保美妆趋势'],
+      reason:'零废弃美妆趋势推动，竹柄+天然猪鬃组合符合欧洲可持续消费偏好，合规门槛相对低。',
+      metrics:{ vol:'月搜索量 14K', growth:'+28%', margin:'50%', comp:'低' },
+      bsrTrend:[15,17,19,21,23,25,27,30,32,35,37,40],
+      gaps:[{icon:'🎁',pain:'无礼盒包装',opp:'发刷+护发套装礼盒受欢迎'},{icon:'📖',pain:'使用说明缺乏',opp:'配发刷护理指南增加产品价值感'}]
+    }
+  ]
+};
+
+const B_COMP_DATA = {
+  de: [
+    {level:'danger',icon:'🔴',title:'LUCID 包装注册（所有品类必须）',sub:'在德国销售任何带包装商品须注册，年费约€80，约30分钟完成'},
+    {level:'warn',icon:'🟡',title:'LFGB 认证（食品/婴儿/宠物接触类）',sub:'餐具、厨具、婴儿用品、宠物食具如接触食物，须符合LFGB要求 · 申请周期3–4周'},
+    {level:'ok',icon:'✅',title:'CE 认证豁免（非电气/机械类）',sub:'纯厨具、竹制品、家居收纳通常不需要CE认证，合规门槛低'},
+  ],
+  uk: [
+    {level:'danger',icon:'🔴',title:'UKCA 认证（电气/机械类必须）',sub:'CE认证在英国不适用，电子产品等须重新申请UKCA'},
+    {level:'warn',icon:'🟡',title:'英国食品接触材料合规声明',sub:'食品接触类商品需提供符合英国食品法规的材料合规声明'},
+    {level:'ok',icon:'✅',title:'大多数非电气类商品 CE 过渡期仍有效',sub:'建议同步推进UKCA，提前布局'},
+  ],
+  fr: [
+    {level:'danger',icon:'🔴',title:'托班法（Touban Law）强制执行',sub:'商品页面法语内容不得低于60%，违者面临罚款和下架'},
+    {level:'warn',icon:'🟡',title:'Triman 循环标志（包装必须）',sub:'所有在法国销售的包装商品须印有Triman标志，消费者辨认度高'},
+    {level:'ok',icon:'✅',title:'CE 认证（欧盟通行）',sub:'法国是欧盟成员，CE认证适用'},
+  ],
+  se: [
+    {level:'warn',icon:'🟡',title:'KEMI 化学品管控（部分材料）',sub:'特定材料需符合瑞典化学品局额外要求，建议提前查询'},
+    {level:'ok',icon:'✅',title:'CE 认证通行（欧盟成员）',sub:'瑞典是欧盟成员，CE认证直接适用'},
+    {level:'ok',icon:'✅',title:'无LUCID类强制包装注册',sub:'瑞典暂无类似德国的强制包装注册制度'},
+  ],
+  nl: [
+    {level:'ok',icon:'✅',title:'CE 认证通行',sub:'荷兰是欧盟成员，CE认证适用'},
+    {level:'warn',icon:'🟡',title:'荷兰包装法规（Verpakkingenbelasting）',sub:'对包装征税，需了解税率并纳入成本计算'},
+  ],
+  pl: [
+    {level:'ok',icon:'✅',title:'CE 认证通行',sub:'波兰是欧盟成员，CE认证适用'},
+    {level:'warn',icon:'🟡',title:'波兰语标签要求',sub:'商品标签须有波兰语说明，特别是食品接触类产品'},
+  ],
+};
+
+/* ═══════════════════════════════════
+   MODE B LOGIC
+═══════════════════════════════════ */
+function runB2() {
+  if(S.b.mkts.size===0||S.b.cats.size===0){
+    alert('请至少选择一个市场和一个品类');
+    return;
+  }
+  document.getElementById('b1').style.display='none';
+  document.getElementById('b2').style.display='block';
+  document.getElementById('b2-loading').style.display='flex';
+  document.getElementById('b2-body').style.display='none';
+  document.getElementById('b2-comp-card').style.display='none';
+  document.getElementById('b2-confirm').style.display='none';
+  S.b.selSku=null;
+  setP('b',2);
+  setTimeout(buildB2, 1800);
+}
+
+function buildB2() {
+  const mktNames={de:'德国',uk:'英国',fr:'法国',se:'瑞典',nl:'荷兰',pl:'波兰'};
+  const catNames={kitchen:'厨具/餐具',home:'家居/收纳',outdoor:'户外/运动',baby:'母婴/儿童',beauty:'美妆/个护',pet:'宠物用品'};
+  const mLabel=[...S.b.mkts].map(m=>mktNames[m]||m).join('、');
+  const cLabel=[...S.b.cats].map(c=>catNames[c]||c).join('、');
+  const catKey=[...S.b.cats][0];
+  const skus=SKU_DATA[catKey]||SKU_DATA.kitchen;
+
+  document.getElementById('b2-h').textContent=`${mLabel} · ${cLabel} 选品推荐`;
+  document.getElementById('b2-sub').textContent='基于 joybuy 销售数据和欧洲市场趋势，以下是最具潜力的细分商品：';
+
+  const container=document.getElementById('b2-skus');
+  container.innerHTML='';
+  skus.forEach((sku,idx)=>{
+    const rankClass=['r1','r2','r3'][idx]||'r3';
+    const scoreColor=idx===0?'#22c55e':idx===1?'#3b82f6':'#94a3b8';
+    const tagHtml=sku.tags.map(t=>{const[cls,txt]=t.split('|');return`<span class="tag ${cls}">${txt}</span>`;}).join('');
+    const div=document.createElement('div');
+    div.className='sku-card';
+    div.innerHTML=`
+      <div class="sku-head">
+        <div class="sku-rank ${rankClass}">${sku.rank}</div>
+        <div class="sku-title-area">
+          <div class="sku-name">${sku.name}</div>
+          <div class="sku-tags">${tagHtml}</div>
+        </div>
+        <div class="sku-check"></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-lbl">搜索量</div><div class="metric-val" style="color:${scoreColor};font-size:13px">${sku.metrics.vol}</div></div>
+        <div class="metric"><div class="metric-lbl">增速</div><div class="metric-val" style="color:var(--green)">${sku.metrics.growth}</div></div>
+        <div class="metric"><div class="metric-lbl">毛利率</div><div class="metric-val" style="color:var(--amber)">${sku.metrics.margin}</div></div>
+        <div class="metric"><div class="metric-lbl">竞争强度</div><div class="metric-val" style="font-size:13px;color:var(--muted2)">${sku.metrics.comp}</div></div>
+      </div>
+      <!-- 可展开详情 -->
+      <div class="sku-detail" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="margin-bottom:10px">
+          ${renderSparkline(sku.bsrTrend, scoreColor)}
+        </div>
+        <div class="field-lbl" style="margin-bottom:6px">💬 评论缺口分析（你的机会）</div>
+        ${renderGaps(sku.gaps)}
+      </div>
+      <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.55">${sku.reason}</div>
+    `;
+    div.querySelector('.sku-head').addEventListener('click', e=>{
+      if(e.target.closest('.sku-check')) return;
+      const detail=div.querySelector('.sku-detail');
+      detail.style.display=detail.style.display==='none'?'block':'none';
+    });
+    div.querySelector('.sku-check').addEventListener('click', e=>{
+      e.stopPropagation();
+      container.querySelectorAll('.sku-card').forEach(c=>{c.classList.remove('sel');c.querySelector('.sku-check').textContent='';});
+      div.classList.add('sel');
+      div.querySelector('.sku-check').textContent='✓';
+      S.b.selSkuName=sku.name;
+      document.getElementById('b2-confirm').style.display='flex';
+      document.getElementById('b2-btn').textContent=`确认选品：「${sku.name.slice(0,12)}...」→`;
+    });
+    container.appendChild(div);
+  });
+
+  // compliance
+  const mkt=[...S.b.mkts][0];
+  const compItems=B_COMP_DATA[mkt]||B_COMP_DATA.de;
+  document.getElementById('b2-comp').innerHTML=compItems.map(c=>`
+    <div class="comp-item ${c.level}">
+      <div class="comp-icon">${c.icon}</div>
+      <div><div class="comp-title">${c.title}</div><div class="comp-sub">${c.sub}</div></div>
+    </div>
+  `).join('');
+
+  document.getElementById('b2-loading').style.display='none';
+  document.getElementById('b2-body').style.display='block';
+  document.getElementById('b2-comp-card').style.display='block';
+}
+
+function runB3() {
+  if(!S.b.selSkuName) return;
+  document.getElementById('b2').style.display='none';
+  document.getElementById('b3').style.display='block';
+  document.getElementById('b3-h').textContent=`「${S.b.selSkuName}」营销策略`;
+  document.getElementById('b3-loading').style.display='flex';
+  document.getElementById('b3-body').style.display='none';
+  setP('b',4);
+  setTimeout(buildB3, 1800);
+}
+
+function buildB3() {
+  const sku=S.b.selSkuName;
+  const mkts=[...S.b.mkts];
+  const mktNames={de:'德国',uk:'英国',fr:'法国',se:'瑞典',nl:'荷兰',pl:'波兰'};
+  const mLabel=mkts.map(m=>mktNames[m]||m).join('、');
+  const isDE=mkts.includes('de'),isUK=mkts.includes('uk'),isSE=mkts.includes('se');
+  const isBamb=/竹/.test(sku), isSili=/硅胶/.test(sku), isBottl=/保温|水杯/.test(sku);
+  const isPet=/宠物/.test(sku), isBaby=/婴儿|辅食|有机棉/.test(sku);
+
+  const priceDE=isBamb?'€18–€24':isSili?'€22–€32':isBottl?'€28–€40':isPet?'€14–€22':isBaby?'€24–€38':'€18–€28';
+  const priceUK=isBamb?'£15–£20':isSili?'£18–£28':isBottl?'£22–£36':isPet?'£12–£18':isBaby?'£20–£32':'£15–£24';
+  const priceSE=isBamb?'€22–€30':isSili?'€26–€38':isBottl?'€32–€48':isPet?'€16–€26':isBaby?'€28–€44':'€22–€34';
+
+  const titleDE=isBamb?'"Bambus Besteck-Set 5-teilig – BPA-frei, LFGB zertifiziert, kompostierbar"'
+    :isSili?'"Silikon Frischhaltedosen 5er Set – BPA-frei, spülmaschinenfest, mikrowellengeeignet"'
+    :isBottl?'"600ml Edelstahl Thermosflasche Outdoor – auslaufsicher, 18h warm, Wandern Camping"'
+    :isPet?'"Faltbarer Hunde Wassernapf – Silikonfaltbar, BPA-frei, mit Karabiner"'
+    :isBaby?'"Baby Besteck Set Silikon – BPA-frei, LFGB zertifiziert, ergonomisch"'
+    :'"Premium Produkt – hohe Qualität, nachhaltig hergestellt"';
+
+  const kw=isDE?(isBamb?'Bambus Besteck · biologisch abbaubar · Zero Waste · Bambus Geschirr'
+    :isSili?'Silikon Box · BPA frei · Frischhalten · Küche'
+    :isBottl?'Thermosflasche · Edelstahl · isoliert · auslaufsicher · Outdoor'
+    :isPet?'Hunde Trinkflasche · faltbar · outdoor · Hund Zubehör'
+    :isBaby?'Baby Besteck · BPA frei · Silikon · Babybrei · LFGB'
+    :'Premium Produkt · nachhaltig · hochwertig')
+    :isUK?(isBamb?'bamboo cutlery · eco friendly · biodegradable · zero waste'
+    :isSili?'silicone container · BPA free · meal prep · food storage'
+    :isBottl?'insulated bottle · stainless steel · hiking · leak proof'
+    :isPet?'dog water bottle · portable · collapsible · outdoor pet'
+    :isBaby?'baby weaning set · BPA free · silicone · feeding'
+    :'premium eco product · sustainable')
+    :(isBamb?'bambu bestick · biologiskt nedbrytbart · hållbart'
+    :isBottl?'termos · rostfri · isolerad · utomhus'
+    :'hållbar produkt · ekologisk');
+
+  const html=`
+    <div class="strat-section">
+      <div class="strat-h">🏷️ 商品标题 & 关键词</div>
+      ${isDE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇩🇪 德国标题：${titleDE}</div></div>`:''}
+      ${isUK?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇬🇧 英国标题：${titleDE.replace(/Edelstahl/g,'Stainless Steel').replace(/Silikon/g,'Silicone').replace(/Bambus/g,'Bamboo')}</div></div>`:''}
+      <div class="strat-item"><div class="strat-dot">▸</div><div><strong>核心搜索词（${mLabel}）：</strong><br><span style="color:var(--muted2)">${kw}</span></div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">💰 定价 & 促销</div>
+      ${isDE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇩🇪 德国售价：<strong>${priceDE}</strong></div></div>`:''}
+      ${isUK?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇬🇧 英国售价：<strong>${priceUK}</strong></div></div>`:''}
+      ${isSE?`<div class="strat-item"><div class="strat-dot">▸</div><div>🇸🇪 瑞典售价：<strong>${priceSE}（北欧环保溢价）</strong></div></div>`:''}
+      <div class="strat-item"><div class="strat-dot">▸</div><div>启动期（前2–4周）：以区间低值跑量，目标积累50条评价后提价</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>礼盒选项：欧洲节日礼购场景高频，礼盒版可溢价15–20%</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>广告预算建议：启动期日预算€5–€10，稳定后按ACOS≤25%调整</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">📸 主图 & 详情页</div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>图片顺序：① 白底全貌 → ② 认证标识特写 → ③ 使用场景 → ④ 尺寸规格 → ⑤ 包装展示</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>第一屏必须包含认证图标（BPA-free/LFGB/CE/Organic），欧洲消费者决策前必看</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>${isDE?'德国消费者重视实测数据，建议放真实测试图（不只是文字描述）':''}${isUK?'英国消费者看重颜值，生活场景图优先，最好有人物':''}${isSE?'北欧消费者关注可持续性，建议放碳足迹或产地说明':''}</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">📦 物流 & 售后</div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>joybuy ${isDE?'德国本地仓，次日达':isUK?'英国本地仓（Milton Keynes），次日达':'欧洲仓，3–5 工作日'}——在商品页突出配送时效，这是对比跨境发货的核心差异</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>承诺"30天无理由退换"（欧盟法定14天，超额承诺是信任加分项）</div></div>
+      <div class="strat-item"><div class="strat-dot">▸</div><div>首批备货：300–500件，先测数据，稳定后再决定补货量</div></div>
+    </div>
+    <div class="strat-section">
+      <div class="strat-h">📋 上架行动清单</div>
+      <div class="comp-item danger"><div class="comp-icon">🔴</div><div><div class="comp-title">${isDE?'立即：LUCID 包装注册':isUK?'立即：申请 UKCA 认证':'立即：完成当地合规要求'}</div><div class="comp-sub">${isDE?'登录 lucid.de，约30分钟，年费€80':isUK?'联系英国授权机构，周期4–6周':'请参考上方合规预警'}</div></div></div>
+      <div class="comp-item warn"><div class="comp-icon">🟡</div><div><div class="comp-title">建议：${isBamb||isBaby?'LFGB 食品接触认证':isSili?'BPA-free 检测报告':'产品认证补充'}</div><div class="comp-sub">联系 SGS/TÜV/Intertek，周期3–4周，是重要的竞争差异化</div></div></div>
+      <div class="comp-item ok"><div class="comp-icon">✅</div><div><div class="comp-title">备货入仓 → 上架 → 启动期定价冲评价</div><div class="comp-sub">首批300–500件，先跑量，后提价，目标50条评价再进入稳定期</div></div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost btn-sm" onclick="home()">← 重新开始</button>
+    </div>
+  `;
+  document.getElementById('b3-loading').style.display='none';
+  document.getElementById('b3-body').innerHTML=html;
+  document.getElementById('b3-body').style.display='block';
+}
+</script>
+</body>
+</html>
