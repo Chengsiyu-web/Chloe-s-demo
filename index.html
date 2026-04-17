@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>微信读书 · AI 推书助手 PRD</title>
+  <style>
+    :root {
+      --green: #07c160;
+      --green-light: #e8f8ef;
+      --green-mid: #a8e6c3;
+      --dark: #1a1a1a;
+      --gray: #666;
+      --gray-light: #f5f5f5;
+      --border: #e8e8e8;
+      --white: #ffffff;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f7f8fa;
+      color: var(--dark);
+      line-height: 1.7;
+    }
+
+    /* ======= HERO ======= */
+    .hero {
+      background: linear-gradient(135deg, #07c160 0%, #0aad50 60%, #058a40 100%);
+      color: white;
+      padding: 80px 24px 60px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 320px; height: 320px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: -40px;
+      width: 240px; height: 240px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 700;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .hero-sub {
+      font-size: 16px;
+      opacity: 0.88;
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+    .hero-tags {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .hero-tag {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    /* ======= NAV ======= */
+    .sticky-nav {
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-inner::-webkit-scrollbar { display: none; }
+    .nav-link {
+      padding: 16px 20px;
+      font-size: 14px;
+      color: var(--gray);
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+      text-decoration: none;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+
+    /* ======= LAYOUT ======= */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section {
+      padding: 60px 0;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .num {
+      width: 32px; height: 32px;
+      background: var(--green);
+      color: white;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700;
+    }
+    .section-desc {
+      color: var(--gray);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+
+    /* ======= CARDS ======= */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1024px) {
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ======= BACKGROUND ======= */
+    .bg-section {
+      background: var(--white);
+    }
+    .problem-card {
+      border-left: 4px solid #ff4d4f;
+      background: #fff5f5;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .solution-card {
+      border-left: 4px solid var(--green);
+      background: var(--green-light);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .problem-card h3, .solution-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .problem-card h3 { color: #cf1322; }
+    .solution-card h3 { color: #0a6e36; }
+    .problem-card ul, .solution-card ul {
+      padding-left: 18px;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    /* ======= METRICS TABLE ======= */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .metric-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border-top: 4px solid var(--green);
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card.p0 { border-top-color: #ff4d4f; }
+    .metric-card.p1 { border-top-color: #fa8c16; }
+    .metric-card.p2 { border-top-color: #52c41a; }
+    .metric-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    .p0 .metric-label { background: #fff1f0; color: #cf1322; }
+    .p1 .metric-label { background: #fff7e6; color: #d46b08; }
+    .p2 .metric-label { background: #f6ffed; color: #389e0d; }
+    .metric-name {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .metric-value {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .p0 .metric-value { color: #ff4d4f; }
+    .p1 .metric-value { color: #fa8c16; }
+    .metric-desc {
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    /* ======= USER STORY ======= */
+    .story-compare {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .story-compare { grid-template-columns: 1fr; }
+      .arrow-col { transform: rotate(90deg); text-align: center; }
+    }
+    .story-box {
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .story-before { background: #fff5f5; border: 1px solid #ffccc7; }
+    .story-after { background: var(--green-light); border: 1px solid var(--green-mid); }
+    .story-box h4 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .story-before h4 { background: #ff4d4f; color: white; }
+    .story-after h4 { background: var(--green); color: white; }
+    .story-box p { font-size: 14px; color: #333; line-height: 1.8; }
+    .story-box .user { font-weight: 700; color: var(--green); margin-bottom: 8px; display: block; }
+    .story-before .user { color: #cf1322; }
+    .arrow-col { font-size: 40px; text-align: center; color: var(--green); }
+
+    /* ======= DECISIONS ======= */
+    .decision-item {
+      display: flex;
+      gap: 20px;
+      padding: 24px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .decision-num {
+      width: 40px; height: 40px;
+      background: var(--green-light);
+      color: var(--green);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px;
+      flex-shrink: 0;
+    }
+    .decision-content h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .decision-content p {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.8;
+    }
+    .decision-content .tag {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green);
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-top: 8px;
+    }
+
+    /* ======= FEATURES ======= */
+    .feature-group {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .feature-group-header {
+      background: var(--green);
+      color: white;
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-list {
+      padding: 16px 20px;
+    }
+    .feature-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+    }
+    .feature-item:last-child { border-bottom: none; }
+    .feature-dot {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+    .feature-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .feature-item p { font-size: 13px; color: var(--gray); line-height: 1.7; }
+
+    /* ======= WORKFLOW ======= */
+    .workflow-steps {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .workflow-step {
+      flex: 1;
+      min-width: 160px;
+      background: var(--white);
+      border-radius: 10px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .workflow-step + .workflow-step::before {
+      content: '→';
+      position: absolute;
+      left: -16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: var(--green);
+      font-weight: 700;
+      background: #f7f8fa;
+      padding: 0 2px;
+    }
+    .workflow-icon {
+      width: 48px; height: 48px;
+      background: var(--green-light);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin: 0 auto 12px;
+    }
+    .workflow-step h4 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .workflow-step p {
+      font-size: 12px;
+      color: var(--gray);
+      line-height: 1.5;
+    }
+    .workflow-gap {
+      width: 32px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ======= RISKS ======= */
+    .risk-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .risk-table th {
+      background: #333;
+      color: white;
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+    }
+    .risk-table td {
+      padding: 16px 18px;
+      font-size: 13px;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.7;
+    }
+    .risk-table tr:last-child td { border-bottom: none; }
+    .risk-table tr:hover td { background: #fafafa; }
+    .risk-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .risk-h { background: #fff1f0; color: #cf1322; }
+    .risk-m { background: #fff7e6; color: #d46b08; }
+
+    /* ======= DEMO MOCKUP ======= */
+    .phone-mockup {
+      width: 280px;
+      margin: 0 auto;
+      background: #1a1a1a;
+      border-radius: 40px;
+      padding: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .phone-screen {
+      background: #f7f8fa;
+      border-radius: 28px;
+      overflow: hidden;
+      height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-header {
+      background: var(--green);
+      padding: 14px 16px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .phone-header .back { font-size: 18px; }
+    .phone-header .title { font-size: 16px; font-weight: 700; }
+    .phone-body { flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      max-width: 85%;
+      line-height: 1.6;
+    }
+    .bubble.ai {
+      background: white;
+      border-radius: 4px 14px 14px 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      align-self: flex-start;
+    }
+    .bubble.user {
+      background: var(--green);
+      color: white;
+      border-radius: 14px 4px 14px 14px;
+      align-self: flex-end;
+    }
+    .bubble.ai::before {
+      content: '🤖 AI问书';
+      display: block;
+      font-size: 11px;
+      color: var(--green);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .phone-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 16px 14px;
+    }
+    .chip {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      color: var(--green);
+    }
+
+    /* ======= FOOTER ======= */
+    .footer {
+      background: #1a1a1a;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 40px 24px;
+      font-size: 14px;
+    }
+    .footer a { color: var(--green); text-decoration: none; }
+    .footer-name {
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    /* ======= INNOVATION ======= */
+    .innovation-card {
+      background: linear-gradient(135deg, var(--green-light), #ffffff);
+      border: 1px solid var(--green-mid);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .innovation-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+    .innovation-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+    .innovation-card p {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.8;
+    }
+
+    /* ======= SCROLL BEHAVIOR ======= */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body>
+
+<!-- ========== HERO ========== -->
+<section class="hero">
+  <div class="hero-badge">📖 产品需求文档 · PRD</div>
+  <h1>微信读书 · AI 推书助手</h1>
+  <p class="hero-sub">通过 AI 精准推荐，解决无明确阅读目标用户的探索困境，让每一次搜索都能找到真正属于你的书</p>
+  <div class="hero-tags">
+    <span class="hero-tag">🎯 智能推荐</span>
+    <span class="hero-tag">💬 多轮交互</span>
+    <span class="hero-tag">🧬 阅读 DNA</span>
+    <span class="hero-tag">📱 原生集成</span>
+    <span class="hero-tag">🔗 已有智能体 Demo</span>
+  </div>
+</section>
+
+<!-- ========== NAV ========== -->
+<nav class="sticky-nav">
+  <div class="nav-inner">
+    <a class="nav-link" href="#background">背景目标</a>
+    <a class="nav-link" href="#metrics">量化指标</a>
+    <a class="nav-link" href="#stories">用户故事</a>
+    <a class="nav-link" href="#decisions">关键决策</a>
+    <a class="nav-link" href="#features">核心功能</a>
+    <a class="nav-link" href="#workflow">交互流程</a>
+    <a class="nav-link" href="#risks">风险管控</a>
+    <a class="nav-link" href="#demo">产品原型</a>
+  </div>
+</nav>
+
+<!-- ========== 背景目标 ========== -->
+<section class="section bg-section" id="background">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">1</div>
+      背景 & 目标
+    </div>
+    <p class="section-desc">为什么微信读书需要 AI 推书助手？现有搜索能力的核心短板在哪里？</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+      <div class="problem-card">
+        <h3>❌ 现有搜索的痛点</h3>
+        <ul>
+          <li>以关键词机械匹配为主，难以理解模糊意图</li>
+          <li>用户输入"治愈系散文"→ 仅匹配书名，偏差大</li>
+          <li>只能高效服务有明确目标的用户</li>
+          <li>无法满足探索式阅读需求，降低用户活跃度</li>
+        </ul>
+      </div>
+      <div class="solution-card">
+        <h3>✅ AI 推书助手的核心价值</h3>
+        <ul>
+          <li>自然交互：用自然语言表达模糊需求</li>
+          <li>精准理解：多维度挖掘用户真实意图</li>
+          <li>个性化生成：基于阅读 DNA 精准匹配</li>
+          <li>一站直达：推荐结果直达书籍详情页</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid var(--green);">
+      <div style="font-size:13px;color:var(--gray);margin-bottom:8px;">🎯 产品目标</div>
+      <p style="font-size:16px;font-weight:600;line-height:1.8;color:#222;">
+        通过上线 AI 智能推书功能，为<span style="color:var(--green);font-weight:800;">无明确书单的新用户</span>提供精准、可落地的阅读推荐，
+        建立「AI 推荐必属精品」的用户心智，最终提升用户阅读深度与平台粘性。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 量化指标 ========== -->
+<section class="section" id="metrics">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">2</div>
+      量化指标体系
+    </div>
+    <p class="section-desc">5 个核心指标，覆盖准确率、体验、渗透、留存、贡献全链路</p>
+
+    <div class="metrics-grid">
+      <div class="metric-card p0">
+        <div class="metric-label">P0 北极星指标</div>
+        <div class="metric-name">推荐准确率</div>
+        <div class="metric-value">65%</div>
+        <div class="metric-desc">收藏并阅读超过5min的会话数 ÷ 完成至少一轮完整交互的对话数</div>
+      </div>
+      <div class="metric-card p1">
+        <div class="metric-label">P1 护栏指标</div>
+        <div class="metric-name">会话满意度</div>
+        <div class="metric-value">70%</div>
+        <div class="metric-desc">会话结束后用户体验打分，细分为：会话效率 + 推荐满足度</div>
+      </div>
+      <div class="metric-card p1">
+        <div class="metric-label">P1 关键过程指标</div>
+        <div class="metric-name">功能渗透率</div>
+        <div class="metric-value">50%</div>
+        <div class="metric-desc">当日使用 AI 推书功能的用户 ÷ 当日日活用户量</div>
+      </div>
+      <div class="metric-card p1">
+        <div class="metric-label">P1 关键过程指标</div>
+        <div class="metric-name">复访率</div>
+        <div class="metric-value">50%</div>
+        <div class="metric-desc">一周内使用超过1次的用户 ÷ 使用过该功能的用户量</div>
+      </div>
+      <div class="metric-card p2">
+        <div class="metric-label">P2 长期价值指标</div>
+        <div class="metric-name">阅读时长占比</div>
+        <div class="metric-value">45%</div>
+        <div class="metric-desc">从 AI 推书触发的用户阅读总时长 ÷ 平台用户总阅读时长</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 用户故事 ========== -->
+<section class="section bg-section" id="stories">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">3</div>
+      用户故事
+    </div>
+    <p class="section-desc">Before vs After — AI 推书助手如何改变用户的找书体验</p>
+
+    <!-- 用户 A -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:16px;font-weight:700;">USER STORY A — 有阅读欲望，无明确目标</div>
+      <div class="story-compare">
+        <div class="story-box story-before">
+          <h4>⏪ Before</h4>
+          <span class="user">用户 A</span>
+          <p>想看治愈的书，翻了推荐榜、排行榜没喜欢的；参考豆瓣书单发现都是不感兴趣的；输入关键词只能机械匹配书名，找不到真正想要的。</p>
+        </div>
+        <div class="arrow-col">→</div>
+        <div class="story-box story-after">
+          <h4>✨ After</h4>
+          <span class="user">用户 A</span>
+          <p>直接告诉 AI：「今天心情不好，给我推荐几本放松治愈的书」，AI 根据阅读记录和评分智能推荐，每本都有核心关键词，一键直达书籍详情。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用户 B -->
+    <div class="card">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:16px;font-weight:700;">USER STORY B — 有方向需求，无精准书单</div>
+      <div class="story-compare">
+        <div class="story-box story-before">
+          <h4>⏪ Before</h4>
+          <span class="user">用户 B</span>
+          <p>旅行前想看目的地相关文学作品，搜索只能关键词匹配，书目质量参差不齐，无法用完整语句表达诉求；已有书单大多是他人创建，个性化不足。</p>
+        </div>
+        <div class="arrow-col">→</div>
+        <div class="story-box story-after">
+          <h4>✨ After</h4>
+          <span class="user">用户 B</span>
+          <p>与 AI 沟通旅行目的地和阅读偏好，AI 智能推荐相关书单并给出关键词，结合网络信息精准筛选；无需跳转豆瓣，直接在微信读书完成搜索、对比、收藏。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="innovation-card" style="margin-top:20px;">
+      <div class="innovation-icon">💡</div>
+      <h3>产品创新点：书单推荐 + 阅读资源一体化</h3>
+      <p>过去用户在豆瓣找到书单后，还需反复跳转到微信读书搜索收藏。AI 推书助手实现<strong>交互推荐 + 直达详情页一步到位</strong>，节省时间，提升选择效率和个性化程度。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 关键决策 ========== -->
+<section class="section" id="decisions">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">4</div>
+      关键决策点
+    </div>
+    <p class="section-desc">5 个核心产品决策，每一个都有明确的选型理由</p>
+
+    <div class="decision-item">
+      <div class="decision-num">1</div>
+      <div class="decision-content">
+        <h3>目标人群：无明确阅读书单的用户 & 想要阅读的新用户</h3>
+        <p>聚焦探索式阅读需求，避免与已有「书单功能」竞争，精准切入高潜力的未满足需求场景。</p>
+        <span class="tag">探索用户</span><span class="tag">新用户</span>
+      </div>
+    </div>
+
+    <div class="decision-item">
+      <div class="decision-num">2</div>
+      <div class="decision-content">
+        <h3>多入口覆盖：搜索入口 AI 浮层 + 关键词搜索后智能推荐弹出</h3>
+        <p>a) 搜索入口提供醒目的「AI 问书」入口；b) 用户输入关键词直接搜索后弹出 AI 智能推荐，双渠道覆盖全链路提问场景，降低功能发现门槛。</p>
+        <span class="tag">搜索入口</span><span class="tag">渐进触达</span>
+      </div>
+    </div>
+
+    <div class="decision-item">
+      <div class="decision-num">3</div>
+      <div class="decision-content">
+        <h3>交互方式：多轮询问 + 轻交互 + 预置问题选项</h3>
+        <p>目标用户是无明确书单的用户，多轮简单交互可降低心理负担；适配微信读书碎片化阅读场景（通勤10分钟可完成）；进一步可采用预置问题代替手动输入，进一步降低门槛。</p>
+        <span class="tag">轻交互</span><span class="tag">碎片化场景</span><span class="tag">预置选项</span>
+      </div>
+    </div>
+
+    <div class="decision-item">
+      <div class="decision-num">4</div>
+      <div class="decision-content">
+        <h3>画像生成逻辑：主动询问 + 结合历史数据（双轨制）</h3>
+        <p>新用户历史数据极少，单纯依赖数据会导致画像空洞；完全依赖追问会忽略真实偏好。主动询问挖掘深层偏好，历史数据验证追问结果，避免「标签漂移」，生成具有个性化的「阅读 DNA」。</p>
+        <span class="tag">新用户友好</span><span class="tag">老用户精准</span><span class="tag">阅读DNA</span>
+      </div>
+    </div>
+
+    <div class="decision-item">
+      <div class="decision-num">5</div>
+      <div class="decision-content">
+        <h3>生态整合：最终 Output 直达微信读书原生卡片</h3>
+        <p>纯文本链接跳转生硬，缺乏视觉吸引力；原生卡片可展示封面、评分等信息，提升点击意愿。卡片信息更丰富，用户可快速判断是否感兴趣，提升收藏、阅读转化率。</p>
+        <span class="tag">原生卡片</span><span class="tag">封面+评分</span><span class="tag">一键直达</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 核心功能 ========== -->
+<section class="section bg-section" id="features">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">5</div>
+      核心功能模块
+    </div>
+    <p class="section-desc">4 大技能模块，覆盖从需求捕捉到书单直达的完整链路</p>
+
+    <div class="feature-group">
+      <div class="feature-group-header">🎯 技能 1：需求精准捕捉</div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>子功能 1.1：需求完整性分析</h4>
+            <p>自动分析用户输入是否涵盖「风格（温暖治愈/烧脑反转等）、类型（小说/散文等）、题材（AI伦理/职场等）」三个维度；若未全部涵盖，触发第一轮提问，逐次明确缺失维度。</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>子功能 1.2：场景需求追问</h4>
+            <p>在明确风格/类型/题材后，触发第二轮提问："最近最想通过阅读解决什么？比如：放松解压（通勤10分钟读物），深度思考（需要3小时沉浸式阅读），情绪出口（治愈/共鸣类）"；获取用户的阅读场景和核心需求。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-group">
+      <div class="feature-group-header">🧬 技能 2：个性化画像生成</div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>子功能 2.1：历史数据补全</h4>
+            <p>主动询问用户："你过去有什么特别喜欢的书吗？"，挖掘过往偏好；即使新用户无历史数据，也能通过主动提问建立初始画像。</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>子功能 2.2：阅读 DNA 生成</h4>
+            <p>整合两轮追问结果 + 历史数据，生成具体标签，如「偏爱"AI伦理+硬核科幻"，且偏好"温暖结局（主角成长＞毁灭）"，同时需要"微信读书7.8+评分"」。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-group">
+      <div class="feature-group-header">📚 技能 3：高精准书单推荐</div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>子功能 3.1：候选池筛选</h4>
+            <p>从微信读书全量书籍中，筛选出评分≥7.5分的出版物，排除用户已读/收藏书籍；保证推荐书目基础质量。</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>子功能 3.2：画像匹配排序</h4>
+            <p>根据「阅读 DNA」标签，对候选池进行多维度匹配（风格、类型、题材、场景、评分），按匹配度+评分从高到低排序；精选 5 本最匹配的作品。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-group">
+      <div class="feature-group-header">🔗 技能 4：微信读书直达链接生成</div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div>
+            <h4>原生卡片直达</h4>
+            <p>为每本推荐书籍生成微信读书原生卡片，包含封面、书名、评分、简介、直达链接。用户无需离开微信读书，一步完成发现→了解→收藏的完整路径。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 交互流程 ========== -->
+<section class="section" id="workflow">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">6</div>
+      AI 交互 Workflow
+    </div>
+    <p class="section-desc">从用户触发到书单落地，5步轻交互设计</p>
+
+    <div style="background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:32px;overflow-x:auto;">
+      <div style="display:flex;align-items:stretch;gap:0;min-width:700px;">
+
+        <div class="workflow-step">
+          <div class="workflow-icon">👆</div>
+          <h4>触发入口</h4>
+          <p>搜索页 AI 浮层 或 关键词搜索后弹出推荐</p>
+        </div>
+        <div class="workflow-gap">→</div>
+
+        <div class="workflow-step">
+          <div class="workflow-icon">💬</div>
+          <h4>需求分析</h4>
+          <p>AI分析输入，识别缺失维度（风格/类型/题材）</p>
+        </div>
+        <div class="workflow-gap">→</div>
+
+        <div class="workflow-step">
+          <div class="workflow-icon">🙋</div>
+          <h4>轻量追问</h4>
+          <p>1-2轮问题，预置选项可选，挖掘阅读场景和历史偏好</p>
+        </div>
+        <div class="workflow-gap">→</div>
+
+        <div class="workflow-step">
+          <div class="workflow-icon">🧬</div>
+          <h4>DNA 生成</h4>
+          <p>整合追问+历史数据，生成个性化「阅读 DNA」标签</p>
+        </div>
+        <div class="workflow-gap">→</div>
+
+        <div class="workflow-step">
+          <div class="workflow-icon">📖</div>
+          <h4>书单直达</h4>
+          <p>精选5本高匹配书籍，原生卡片展示，一键收藏</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding:16px 20px;background:#fffbe6;border:1px solid #ffe58f;border-radius:10px;font-size:14px;color:#614700;">
+      <strong>⚠️ 实现说明：</strong>「读取用户历史阅读数据」由于缺乏 API 暂无法跑通，当前智能体 Demo 中仅为演示逻辑。
+      已在 Coze 平台搭建工作流，可体验核心交互路径 →
+      <a href="https://www.coze.cn/s/I8LC01gU8Mc/" target="_blank" style="color:var(--green);font-weight:700;">访问 Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 风险管控 ========== -->
+<section class="section bg-section" id="risks">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">7</div>
+      风险点 & 管控措施
+    </div>
+    <p class="section-desc">4 类主要风险，每条都有对应缓解策略</p>
+
+    <table class="risk-table">
+      <thead>
+        <tr>
+          <th style="width:180px;">风险表现</th>
+          <th style="width:80px;">等级</th>
+          <th>影响</th>
+          <th>解决措施</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>新用户历史数据不足，画像空洞</strong></td>
+          <td><span class="risk-badge risk-h">高</span></td>
+          <td>AI无法准确分析，推荐精准度不足，用户信任度降低</td>
+          <td>强化追问引导，帮助新用户更清晰地表达偏好；对新用户优先推荐「入门级高分作品」，降低理解门槛</td>
+        </tr>
+        <tr>
+          <td><strong>追问流程冗长，用户体验差</strong></td>
+          <td><span class="risk-badge risk-m">中</span></td>
+          <td>部分用户觉得繁琐，直接退出</td>
+          <td>优化提问话术，采用「朋友式」语气；用户明确表示"不想回答"可直接基于已有信息推荐；提供预置问题选项，避免手动输入过多文字</td>
+        </tr>
+        <tr>
+          <td><strong>推荐书籍质量问题（敏感内容/付费/未上架）</strong></td>
+          <td><span class="risk-badge risk-h">高</span></td>
+          <td>AI推荐质量差，用户实际收藏数低，信任度下降</td>
+          <td>优化搜推排序，优先展示平台优质/上架合规内容；对需要付费的图书明确标注，让用户自行选择</td>
+        </tr>
+        <tr>
+          <td><strong>隐私安全风险：用户历史数据泄露</strong></td>
+          <td><span class="risk-badge risk-h">高</span></td>
+          <td>历史阅读数据被不当使用或泄露，违反隐私政策，用户信任崩塌，平台合规风险</td>
+          <td>仅在用户授权范围内使用数据；数据传输加密，存储采用脱敏处理</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ========== 产品原型 Demo ========== -->
+<section class="section" id="demo">
+  <div class="container">
+    <div class="section-title">
+      <div class="num">8</div>
+      产品交互示意
+    </div>
+    <p class="section-desc">AI 推书助手的多轮对话示意（轻交互 · 碎片化场景）</p>
+
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:40px;align-items:start;">
+      <div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <!-- 交互步骤说明 -->
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:var(--green);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</div>
+            <div class="card" style="flex:1;">
+              <div style="font-size:13px;color:var(--gray);margin-bottom:6px;">用户触发</div>
+              <div style="font-size:14px;">点击搜索页「AI 问书」入口，或在关键词搜索后看到弹出的 AI 推荐卡片。</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:var(--green);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</div>
+            <div class="card" style="flex:1;">
+              <div style="font-size:13px;color:var(--gray);margin-bottom:6px;">AI 捕捉需求</div>
+              <div style="font-size:14px;">AI 分析用户初始输入，识别是否包含风格/类型/题材三个维度，若缺失则发起追问（最多2轮），提供预置选项降低输入负担。</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:var(--green);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</div>
+            <div class="card" style="flex:1;">
+              <div style="font-size:13px;color:var(--gray);margin-bottom:6px;">生成阅读 DNA</div>
+              <div style="font-size:14px;">整合追问结果与历史阅读数据，生成个性化「阅读 DNA」，如「偏爱科幻+温暖结局，需要微信读书7.5+评分」。</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:var(--green);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">4</div>
+            <div class="card" style="flex:1;">
+              <div style="font-size:13px;color:var(--gray);margin-bottom:6px;">书单直达</div>
+              <div style="font-size:14px;">精选5本高匹配书籍，以微信读书原生卡片展示（封面+书名+评分+简介），用户一键直达详情页并收藏。</div>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;padding:16px 20px;background:var(--green-light);border-radius:10px;">
+            <strong style="color:var(--green);">🔗 体验已搭建的 Coze 智能体 Demo：</strong>
+            <a href="https://www.coze.cn/s/I8LC01gU8Mc/" target="_blank"
+               style="color:var(--green);font-weight:700;word-break:break-all;">
+              https://www.coze.cn/s/I8LC01gU8Mc/
+            </a>
+            <div style="font-size:12px;color:var(--gray);margin-top:6px;">基于 Coze 智能体 + 工作流构建，可体验完整的多轮推书交互</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 手机 Mockup -->
+      <div>
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <span class="back">‹</span>
+              <span class="title">AI 问书</span>
+            </div>
+            <div class="phone-body">
+              <div class="bubble ai">嗨！我是 AI 推书助手 📚 告诉我你现在的阅读心情吧～</div>
+              <div class="bubble user">今天心情不好，想看治愈的书</div>
+              <div class="bubble ai">了解～帮你问个小问题：你更偏向哪种阅读场景呢？</div>
+            </div>
+            <div class="phone-chips">
+              <span class="chip">通勤短阅读</span>
+              <span class="chip">睡前放松</span>
+              <span class="chip">深度沉浸</span>
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center;font-size:12px;color:var(--gray);margin-top:12px;">交互示意图（预置选项设计）</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="footer">
+  <div class="footer-name">程思语 · 产品需求文档</div>
+  <p>微信读书 AI 推书助手 · 基于真实用户痛点的产品构想</p>
+  <p style="margin-top:8px;">
+    <a href="https://www.coze.cn/s/I8LC01gU8Mc/" target="_blank">🔗 Coze 智能体 Demo</a>
+    &nbsp;·&nbsp;
+    <span>中国人民大学商学院 2027届</span>
+  </p>
+  <p style="margin-top:16px;opacity:0.5;font-size:12px;">本文档为产品学习实践，数据与功能均为设计阶段方案</p>
+</footer>
+
+<script>
+  // 滚动高亮导航
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
