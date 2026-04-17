@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StageShare · 让闲置流动，为穿搭新生</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F0E8;
+    --bg-card: #FAF7F2;
+    --bg-white: #FDFBF8;
+    --accent: #D4A5A5;
+    --accent-light: #EDD5D5;
+    --accent-deep: #B88080;
+    --text: #2C2C2C;
+    --text-muted: #8A8278;
+    --text-light: #B5AFA8;
+    --divider: #E8E2D8;
+    --serif: 'Noto Serif SC', serif;
+    --sans: 'Noto Sans SC', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.2rem 4rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(245, 240, 232, 0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--divider);
+  }
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+  .nav-links {
+    display: flex; gap: 2.5rem; list-style: none;
+  }
+  .nav-links a {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 8rem 2rem 6rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,165,165,0.12) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    border: 1px solid var(--accent-light);
+    padding: 0.35rem 1rem;
+    border-radius: 2rem;
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+  }
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 1.8rem;
+  }
+  .hero-title em {
+    font-style: normal;
+    color: var(--accent-deep);
+  }
+  .hero-sub {
+    font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+    color: var(--text-muted);
+    max-width: 480px;
+    margin: 0 auto 3.5rem;
+    line-height: 2;
+    font-weight: 300;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: var(--text);
+    color: var(--bg);
+    text-decoration: none;
+    padding: 0.85rem 2.2rem;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    transition: all 0.25s;
+    font-weight: 400;
+  }
+  .hero-cta:hover {
+    background: var(--accent-deep);
+    transform: translateY(-1px);
+  }
+  .hero-cta .arrow { font-size: 0.8rem; transition: transform 0.2s; }
+  .hero-cta:hover .arrow { transform: translateX(3px); }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    color: var(--text-light);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, var(--accent-light), transparent);
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+  @keyframes scrollLine {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.1); }
+  }
+
+  /* ── SECTION COMMON ── */
+  section { padding: 7rem 2rem; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 400;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+    font-weight: 400;
+    line-height: 1.3;
+    color: var(--text);
+    margin-bottom: 1.2rem;
+  }
+  .section-body {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    max-width: 540px;
+    line-height: 2;
+  }
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--divider);
+    margin: 0;
+  }
+
+  /* ── PROBLEM ── */
+  #problem { background: var(--bg-white); }
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--divider);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 4rem;
+  }
+  .problem-cell {
+    background: var(--bg-white);
+    padding: 2.5rem;
+  }
+  .problem-cell.accent { background: #FDF5F5; }
+  .problem-icon {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .problem-cell h3 {
+    font-family: var(--serif);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+  }
+  .problem-cell p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.9;
+  }
+
+  /* ── FEATURES ── */
+  #features { background: var(--bg); }
+  .features-intro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+    margin-bottom: 6rem;
+  }
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+  .feature-item {
+    display: flex;
+    gap: 1.2rem;
+    align-items: flex-start;
+  }
+  .feature-num {
+    font-size: 0.72rem;
+    color: var(--accent-deep);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    padding-top: 0.15rem;
+    flex-shrink: 0;
+    width: 1.8rem;
+  }
+  .feature-item h4 {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+  .feature-item p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.9;
+  }
+
+  /* phone mockup */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .phone-frame {
+    width: 240px;
+    height: 480px;
+    border-radius: 32px;
+    background: var(--bg-card);
+    border: 8px solid var(--text);
+    box-shadow: 0 32px 80px rgba(44,44,44,0.15), 0 8px 20px rgba(44,44,44,0.08);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-notch {
+    width: 80px; height: 20px;
+    background: var(--text);
+    border-radius: 0 0 12px 12px;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+  .phone-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0.5rem;
+  }
+  .ps-header {
+    font-family: var(--serif);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.5rem;
+    color: var(--text);
+  }
+  .ps-tabs {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0 0.5rem 0.4rem;
+  }
+  .ps-tab {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    background: var(--divider);
+    color: var(--text-muted);
+  }
+  .ps-tab.active {
+    background: var(--accent);
+    color: white;
+  }
+  .ps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    padding: 0 0.3rem;
+    overflow: hidden;
+  }
+  .ps-card {
+    background: var(--bg-white);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--divider);
+  }
+  .ps-img {
+    width: 100%;
+    aspect-ratio: 3/4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+  .ps-img-1 { background: linear-gradient(135deg, #F0E6E6, #E8D5D5); }
+  .ps-img-2 { background: linear-gradient(135deg, #E6EAF0, #D5DCE8); }
+  .ps-img-3 { background: linear-gradient(135deg, #EAF0E6, #D5E8D5); }
+  .ps-img-4 { background: linear-gradient(135deg, #F0EDE6, #E8E2D5); }
+  .ps-card-info {
+    padding: 0.3rem 0.4rem;
+  }
+  .ps-card-name {
+    font-size: 0.58rem;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ps-card-tag {
+    font-size: 0.5rem;
+    color: var(--accent-deep);
+    background: var(--accent-light);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.5rem;
+    display: inline-block;
+    margin-top: 0.15rem;
+  }
+  .ps-tabbar {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--divider);
+    flex-shrink: 0;
+  }
+  .ps-tb-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    font-size: 0.5rem;
+    color: var(--text-muted);
+  }
+  .ps-tb-item.active { color: var(--accent-deep); }
+  .ps-tb-icon { font-size: 0.9rem; }
+  .ps-tb-center {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    margin-top: -10px;
+    box-shadow: 0 4px 12px rgba(212,165,165,0.4);
+  }
+
+  /* tabs showcase */
+  .tabs-showcase {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .tab-card {
+    background: var(--bg-card);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 2rem 1.8rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .tab-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(44,44,44,0.07);
+  }
+  .tab-card-icon { font-size: 1.5rem; margin-bottom: 1rem; display: block; }
+  .tab-card h3 {
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .tab-card p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.9;
+  }
+
+  /* ── HIGHLIGHTS ── */
+  #highlights { background: var(--bg-white); }
+  .highlights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 4rem;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .highlight-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr;
+    align-items: center;
+    padding: 2.2rem 2.5rem;
+    border-bottom: 1px solid var(--divider);
+    gap: 2.5rem;
+    transition: background 0.2s;
+    background: var(--bg-white);
+  }
+  .highlight-row:last-child { border-bottom: none; }
+  .highlight-row:hover { background: #FDF8F5; }
+  .highlight-num {
+    font-family: var(--serif);
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--accent-light);
+    line-height: 1;
+  }
+  .highlight-title {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+  .highlight-desc {
+    font-size: 0.83rem;
+    color: var(--text-muted);
+    line-height: 1.9;
+  }
+  .highlight-tag {
+    justify-self: end;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--accent-deep);
+    background: var(--accent-light);
+    padding: 0.3rem 0.9rem;
+    border-radius: 2rem;
+    white-space: nowrap;
+  }
+
+  /* ── FLOW ── */
+  #flow { background: var(--bg); }
+  .flow-steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin-top: 4rem;
+    position: relative;
+  }
+  .flow-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 0 1rem;
+  }
+  .flow-step::after {
+    content: '→';
+    position: absolute;
+    right: -0.5rem;
+    top: 1rem;
+    color: var(--accent-light);
+    font-size: 1rem;
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-dot {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--divider);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    margin: 0 auto 1rem;
+  }
+  .flow-step h4 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .flow-step p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  /* ── ABOUT ── */
+  #about { background: var(--text); }
+  #about .section-label { color: var(--accent-light); }
+  #about .section-title { color: white; }
+  #about .section-body { color: rgba(255,255,255,0.45); max-width: 560px; }
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    margin-top: 4rem;
+    align-items: start;
+  }
+  .about-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .stat-item { border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 2rem; }
+  .stat-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-num {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--accent-light);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .stat-label {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.06em;
+  }
+  .about-collab {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .collab-block {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 1.5rem 1.8rem;
+  }
+  .collab-block h4 {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+  .collab-block ul {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .collab-block li {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    line-height: 1.7;
+  }
+  .collab-block li::before {
+    content: '–';
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── CTA ── */
+  #cta {
+    background: var(--bg);
+    text-align: center;
+    padding: 8rem 2rem;
+  }
+  .cta-title {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+  }
+  .cta-body {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+    line-height: 2;
+  }
+  .cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--text);
+    color: var(--bg);
+    text-decoration: none;
+    padding: 0.85rem 2rem;
+    border-radius: 2rem;
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+    transition: all 0.25s;
+  }
+  .btn-primary:hover { background: var(--accent-deep); transform: translateY(-1px); }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: transparent;
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.85rem 2rem;
+    border-radius: 2rem;
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--divider);
+    transition: all 0.25s;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent-deep); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--text);
+    padding: 2.5rem 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-logo {
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.4);
+  }
+  .footer-note {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── REVEAL ANIMATION ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal:nth-child(2) { transition-delay: 0.1s; }
+  .reveal:nth-child(3) { transition-delay: 0.2s; }
+  .reveal:nth-child(4) { transition-delay: 0.3s; }
+
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .problem-grid { grid-template-columns: 1fr; }
+    .features-intro { grid-template-columns: 1fr; gap: 3rem; }
+    .tabs-showcase { grid-template-columns: 1fr; }
+    .highlight-row { grid-template-columns: 60px 1fr; }
+    .highlight-tag { display: none; }
+    .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .flow-steps { flex-direction: column; gap: 1.5rem; }
+    .flow-step::after { display: none; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">StageShare</div>
+  <ul class="nav-links">
+    <li><a href="#problem">痛点</a></li>
+    <li><a href="#features">功能</a></li>
+    <li><a href="#highlights">亮点</a></li>
+    <li><a href="#about">关于项目</a></li>
+    <li><a href="https://k28x5k.csb.app/" target="_blank">查看原型 ↗</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">微信小程序 · 概念产品</div>
+  <h1 class="hero-title">
+    让<em>闲置</em>流动<br>为穿搭<em>新生</em>
+  </h1>
+  <p class="hero-sub">
+    随舞演出服，每一件都值得再次登台。<br>
+    StageShare 是随舞爱好者之间的<br>
+    轻量共享社区。
+  </p>
+  <a href="https://k28x5k.csb.app/" target="_blank" class="hero-cta">
+    查看交互原型 <span class="arrow">→</span>
+  </a>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    scroll
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Problem · 痛点</div>
+      <h2 class="section-title">每一件演出服<br>都不该只登一次台</h2>
+      <p class="section-body">随舞路演的独特性在于——每首歌、每个舞台，都有它特定的「战袍」。但这件衣服，演出结束后往往就永远挂进了衣柜。</p>
+    </div>
+    <div class="problem-grid reveal">
+      <div class="problem-cell accent">
+        <span class="problem-icon">💸</span>
+        <h3>购置成本难以持续</h3>
+        <p>一场演出专门购买，一套几百元，穿完即闲置，复购率极低，对普通爱好者不友好。</p>
+      </div>
+      <div class="problem-cell">
+        <span class="problem-icon">🗂</span>
+        <h3>闲置处理无处可去</h3>
+        <p>演出服风格强烈、日常不可穿，挂在衣柜吃灰，扔了可惜，卖了没有懂行的买家。</p>
+      </div>
+      <div class="problem-cell">
+        <span class="problem-icon">🔍</span>
+        <h3>找衣服靠运气</h3>
+        <p>闲鱼全品类信息噪音大，无法按「路演歌曲/舞台风格」筛选，买到手才发现不合适。</p>
+      </div>
+      <div class="problem-cell accent">
+        <span class="problem-icon">🤝</span>
+        <h3>StageShare 的答案</h3>
+        <p>同圈子用户天然有共同语言，理解彼此的舞台需求。轻量共享工具，让每件演出服都能继续登台。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="features-intro">
+      <div>
+        <div class="reveal">
+          <div class="section-label">Features · 功能</div>
+          <h2 class="section-title">为随舞场景<br>量身设计的每一处细节</h2>
+        </div>
+        <ul class="feature-list">
+          <li class="feature-item reveal">
+            <span class="feature-num">01</span>
+            <div>
+              <h4>发现好衣</h4>
+              <p>双列瀑布流 + 品类 Tab 筛选，商品卡片展示风格标签、尺码、路演歌曲信息，一眼判断适配度。</p>
+            </div>
+          </li>
+          <li class="feature-item reveal">
+            <span class="feature-num">02</span>
+            <div>
+              <h4>需求广场</h4>
+              <p>发布借衣需求，点击「我有这件」直接跳入聊天，自动展示需求引用卡片，降低沟通启动成本。</p>
+            </div>
+          </li>
+          <li class="feature-item reveal">
+            <span class="feature-num">03</span>
+            <div>
+              <h4>两步式发布</h4>
+              <p>第一步填基本信息，第二步设置可用日历 + 取货偏好，发布后实时进入信息流，支持随时编辑。</p>
+            </div>
+          </li>
+          <li class="feature-item reveal">
+            <span class="feature-num">04</span>
+            <div>
+              <h4>IM 消息系统</h4>
+              <p>从详情页、需求广场、订单页均可一键发起对话，会话持久化，聊天记录跨场景保留。</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="phone-wrap reveal">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="ps-header">发现好衣 ✨</div>
+            <div class="ps-tabs">
+              <div class="ps-tab active">全部</div>
+              <div class="ps-tab">上衣</div>
+              <div class="ps-tab">连衣裙</div>
+              <div class="ps-tab">配饰</div>
+            </div>
+            <div class="ps-grid">
+              <div class="ps-card">
+                <div class="ps-img ps-img-1">🌸</div>
+                <div class="ps-card-info">
+                  <div class="ps-card-name">粉色蕾丝上衣</div>
+                  <div class="ps-card-tag">女团风 · S</div>
+                </div>
+              </div>
+              <div class="ps-card">
+                <div class="ps-img ps-img-2">💙</div>
+                <div class="ps-card-info">
+                  <div class="ps-card-name">Y2K牛仔外套</div>
+                  <div class="ps-card-tag">Y2K · M</div>
+                </div>
+              </div>
+              <div class="ps-card">
+                <div class="ps-img ps-img-3">💚</div>
+                <div class="ps-card-info">
+                  <div class="ps-card-name">绿色抹胸裙</div>
+                  <div class="ps-card-tag">girlcrush · S</div>
+                </div>
+              </div>
+              <div class="ps-card">
+                <div class="ps-img ps-img-4">🤍</div>
+                <div class="ps-card-info">
+                  <div class="ps-card-name">白色蓬蓬裙</div>
+                  <div class="ps-card-tag">公主风 · XS</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ps-tabbar">
+            <div class="ps-tb-item active">
+              <div class="ps-tb-icon">🏠</div>
+              发现
+            </div>
+            <div class="ps-tb-item">
+              <div class="ps-tb-icon">📋</div>
+              需求
+            </div>
+            <div class="ps-tb-center">+</div>
+            <div class="ps-tb-item">
+              <div class="ps-tb-icon">💬</div>
+              消息
+            </div>
+            <div class="ps-tb-item">
+              <div class="ps-tb-icon">👤</div>
+              我的
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-showcase">
+      <div class="tab-card reveal">
+        <span class="tab-card-icon">📅</span>
+        <h3>预定与订单流程</h3>
+        <p>浏览 → 聊聊或立即预定 → 衣主确认 → 交付完成，订单状态实时流转，双方视角清晰。</p>
+      </div>
+      <div class="tab-card reveal">
+        <span class="tab-card-icon">👤</span>
+        <h3>个人中心</h3>
+        <p>我发布的 / 我预定的分状态管理，待确认商品橙色提示，支持编辑下架，设置页微信头像授权。</p>
+      </div>
+      <div class="tab-card reveal">
+        <span class="tab-card-icon">🔍</span>
+        <h3>全站搜索</h3>
+        <p>按关键词、风格、尺码实时过滤，支持模糊匹配、防抖优化、最近搜索记录，结果按相关度排序。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HIGHLIGHTS -->
+<section id="highlights">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Highlights · 设计亮点</div>
+      <h2 class="section-title">三个细节<br>体现对场景的深度理解</h2>
+    </div>
+    <div class="highlights-list reveal">
+      <div class="highlight-row">
+        <div class="highlight-num">01</div>
+        <div>
+          <div class="highlight-title">随舞现场交换</div>
+          <div class="highlight-desc">演出圈特有取货方式——演出当天在场地直接交接，完全规避物流等待。这是闲鱼等通用平台不会有的设计，专为随舞场景而生。</div>
+        </div>
+        <div class="highlight-tag">场景专属</div>
+      </div>
+      <div class="highlight-row">
+        <div class="highlight-num">02</div>
+        <div>
+          <div class="highlight-title">路演歌曲字段</div>
+          <div class="highlight-desc">衣主标注「这件衣服上过哪个舞台」，让同圈子用户一眼建立共鸣，也帮助预定者判断风格适配度——比任何标签都更精准的上下文。</div>
+        </div>
+        <div class="highlight-tag">社群共鸣</div>
+      </div>
+      <div class="highlight-row">
+        <div class="highlight-num">03</div>
+        <div>
+          <div class="highlight-title">预定前先沟通引导</div>
+          <div class="highlight-desc">提交预定前弹窗引导「建议先与衣主沟通好时间和细节」，并提供「去聊聊」快捷入口，主动降低无效预定率，保护双方体验。</div>
+        </div>
+        <div class="highlight-tag">体验保护</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FLOW -->
+<section id="flow">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Flow · 核心流程</div>
+      <h2 class="section-title">从浏览到交付<br>每一步都顺手</h2>
+    </div>
+    <div class="flow-steps reveal">
+      <div class="flow-step">
+        <div class="flow-dot">👀</div>
+        <h4>浏览发现</h4>
+        <p>双列流 + 风格标签 + 搜索筛选</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">💬</div>
+        <h4>沟通确认</h4>
+        <p>去聊聊 / 我有这件一键发起</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">📝</div>
+        <h4>提交预定</h4>
+        <p>选日期 + 取货方式 + 备注</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">✅</div>
+        <h4>衣主确认</h4>
+        <p>橙色提醒 + 一键接单 / 拒绝</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-dot">🎉</div>
+        <h4>交付完成</h4>
+        <p>现场交换 / 同城面交 / 邮寄</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">About · 关于项目</div>
+      <h2 class="section-title">从零到可交互 Demo<br>全程 AI 协作完成</h2>
+      <p class="section-body">微信小程序代码（WXML/WXSS/JS）、chatStore 持久化、订单状态流转——均通过人机协作开发，在微信开发者工具上完整实现所有功能。</p>
+    </div>
+    <div class="about-grid reveal">
+      <div class="about-stat">
+        <div class="stat-item">
+          <div class="stat-num">v1.9</div>
+          <div class="stat-label">当前版本 · 9个迭代版本</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">5</div>
+          <div class="stat-label">Tab 页面 · 完整功能架构</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">功能完成度 · 含 IM 消息系统</div>
+        </div>
+      </div>
+      <div class="about-collab">
+        <div class="collab-block">
+          <h4>产品经理负责</h4>
+          <ul>
+            <li>产品方向和功能边界的决策</li>
+            <li>每个页面的交互逻辑和视觉风格定义</li>
+            <li>Bug 的发现和问题描述</li>
+            <li>代码修改的最终确认和取舍</li>
+          </ul>
+        </div>
+        <div class="collab-block">
+          <h4>AI 负责</h4>
+          <ul>
+            <li>所有页面的代码实现</li>
+            <li>Bug 根因定位和修复方案</li>
+            <li>技术约束的提前预警</li>
+            <li>复杂逻辑的方案设计</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RETROSPECTIVE -->
+<section id="retro" style="background: var(--bg);">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Retrospective · 效率复盘</div>
+      <h2 class="section-title">AI 协作中<br>不可逾越的四个摩擦点</h2>
+      <p class="section-body">这次开发过程中有几类问题反复出现——它们不是偶然的，而是目前人机协作编程模式下结构性的瓶颈。</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:3.5rem;">
+
+      <div class="tab-card reveal" style="border-left: 3px solid var(--accent);">
+        <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:0.8rem;font-weight:500;">摩擦点 01</div>
+        <h3 style="margin-bottom:0.6rem;">代码改动无法直达本地</h3>
+        <p>每次 AI 在服务器改完代码，需重新打包→下载 zip→解压→导入开发者工具，改一行和改一百行的验证成本相同。</p>
+        <div style="margin-top:1rem;padding:0.8rem 1rem;background:var(--bg);border-radius:6px;font-size:0.8rem;color:var(--accent-deep);">
+          💡 后期最优解：AI 直接告知「改哪个文件第几行改成什么」，本地手动改，效率更高
+        </div>
+      </div>
+
+      <div class="tab-card reveal" style="border-left: 3px solid var(--accent);">
+        <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:0.8rem;font-weight:500;">摩擦点 02</div>
+        <h3 style="margin-bottom:0.6rem;">环境差异导致 Bug 难复现</h3>
+        <p>模拟器报 [] timeout，AI 无法直接看到报错，来回确认多轮后发现是基础库 3.15.1 的已知 bug，与代码无关。</p>
+        <div style="margin-top:1rem;padding:0.8rem 1rem;background:var(--bg);border-radius:6px;font-size:0.8rem;color:var(--accent-deep);">
+          💡 教训：先换基础库版本或上真机验证，能用工具排除的环境变量先排除再 Debug
+        </div>
+      </div>
+
+      <div class="tab-card reveal" style="border-left: 3px solid var(--divider);">
+        <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.8rem;font-weight:500;">摩擦点 03</div>
+        <h3 style="margin-bottom:0.6rem;">AI 上下文是有限的</h3>
+        <p>「外部图片已全部清除」这件事，跨版本后 AI 遗忘，api.js 里又出现了 picsum 链接，导致 timeout 问题重演。</p>
+        <div style="margin-top:1rem;padding:0.8rem 1rem;background:var(--bg);border-radius:6px;font-size:0.8rem;color:var(--text-muted);">
+          💡 教训：关键约束写进文件/注释，不能只在对话里说。不写下来的东西，对 AI 来说等于没说过
+        </div>
+      </div>
+
+      <div class="tab-card reveal" style="border-left: 3px solid var(--divider);">
+        <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.8rem;font-weight:500;">摩擦点 04</div>
+        <h3 style="margin-bottom:0.6rem;">需求描述不精确导致返工</h3>
+        <p>「借出中的物品点开应该进预定单」被实现成了「进商品详情页」，双方心智模型不同但未在事前对齐。</p>
+        <div style="margin-top:1rem;padding:0.8rem 1rem;background:var(--bg);border-radius:6px;font-size:0.8rem;color:var(--text-muted);">
+          💡 教训：描述功能时说清楚起点 + 终点 + 中间发生了什么，而非只说结果
+        </div>
+      </div>
+
+    </div>
+
+    <div class="reveal" style="margin-top:2.5rem;padding:2rem 2.5rem;background:var(--bg-white);border:1px solid var(--divider);border-radius:12px;">
+      <div style="font-size:0.82rem;color:var(--text-muted);line-height:2;">
+        <strong style="color:var(--text);font-size:0.9rem;">核心洞察：</strong>
+        AI 编程协作的效率瓶颈，本质上都是<strong>信息传递的损耗</strong>——代码改动无法直达、报错无法直接观察、上下文会被截断、需求描述存在歧义。这些不是 AI 能力的问题，而是人机接口还不够成熟的问题。当前阶段最重要的协作习惯：把关键约束写进文件、用精确的语言描述需求、优先用工具排除环境变量。
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CTA -->
+<section id="cta">
+  <div class="container">
+    <div class="reveal">
+      <h2 class="cta-title">想看看它真正的样子？</h2>
+      <p class="cta-body">交互原型已完整实现所有功能，包括发现好衣、需求广场、IM 消息、预定流程。</p>
+      <div class="cta-buttons">
+        <a href="https://k28x5k.csb.app/" target="_blank" class="btn-primary">查看交互原型 →</a>
+        <a href="https://docs.xiaohongshu.com/doc/18d14e23e390a44fd6aa78116845ca9c" target="_blank" class="btn-outline">阅读产品文档</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">StageShare · 让闲置流动，为穿搭新生</div>
+  <div class="footer-note">程思语 · 产品设计 · 2026</div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Hero elements reveal immediately
+  document.querySelectorAll('.hero .reveal, .hero *').forEach(el => {
+    el.classList.add('visible');
+  });
+</script>
+</body>
+</html>
