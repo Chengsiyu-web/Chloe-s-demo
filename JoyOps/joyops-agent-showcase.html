@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JoyOps · 跨境智能选品 Agent</title>
+<style>
+  :root {
+    --bg: #F9F6F2;
+    --bg2: #FFFDFB;
+    --text: #1A1A1A;
+    --text2: #5C5C5C;
+    --text3: #999;
+    --accent: #E53E3E;
+    --accent2: #C53030;
+    --accent3: #FEEBC8;
+    --border: #E8E4E0;
+    --warm: #ED8936;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  /* Fullpage containers */
+  .page-container {
+    height: 100vh; width: 100vw;
+    position: relative; overflow: hidden;
+  }
+  .page {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(60px) scale(0.98);
+    overflow-y: auto;
+  }
+  .page.active {
+    opacity: 1; pointer-events: auto; transform: translateY(0) scale(1);
+  }
+  .page.prev {
+    transform: translateY(-60px) scale(0.98);
+  }
+  .page-inner {
+    max-width: 760px; width: 100%;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 200;
+    background: rgba(249,246,242,0.92);
+    backdrop-filter: blur(12px);
+    height: 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-size: 15px; font-weight: 600; }
+  .nav-links { display: flex; gap: 20px; }
+  .nav-links a {
+    font-size: 12px; color: var(--text2); text-decoration: none;
+    transition: color 0.2s; cursor: pointer;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--accent); font-weight: 500; }
+
+  /* Page indicators */
+  .page-dots {
+    position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+    z-index: 200; display: flex; flex-direction: column; gap: 10px;
+  }
+  .page-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border); cursor: pointer; transition: all 0.3s;
+  }
+  .page-dot.active { background: var(--accent); transform: scale(1.3); }
+
+  /* Arrows */
+  .nav-arrow {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 200; display: flex; gap: 16px; align-items: center;
+  }
+  .nav-arrow button {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; color: var(--text2);
+    font-size: 16px;
+  }
+  .nav-arrow button:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-arrow button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-arrow .counter {
+    font-size: 12px; color: var(--text3); min-width: 40px; text-align: center;
+  }
+
+  /* Section titles */
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 28px; font-weight: 600; line-height: 1.25;
+    letter-spacing: -0.8px; margin-bottom: 14px;
+  }
+  .section-desc {
+    font-size: 15px; color: var(--text2); max-width: 600px; margin-bottom: 32px;
+  }
+
+  /* Hero */
+  .hero-content { text-align: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent3); color: var(--accent2);
+    border: 1px solid #FBD38D; border-radius: 100px;
+    font-size: 12px; font-weight: 500; padding: 5px 14px; margin-bottom: 24px;
+  }
+  .hero-content h1 {
+    font-size: 48px; font-weight: 600; line-height: 1.15;
+    letter-spacing: -1.5px; margin-bottom: 18px;
+  }
+  .hero-content h1 .highlight { color: var(--accent); font-weight: 700; }
+  .hero-content .subtitle {
+    font-size: 16px; color: var(--text2); max-width: 520px; margin: 0 auto 28px;
+  }
+  .hero-content .meta-line {
+    font-size: 13px; color: var(--text3); margin-top: 20px;
+  }
+
+  /* Pain Points */
+  .pain-grid { display: flex; flex-direction: column; gap: 12px; }
+  .pain-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px; display: flex; gap: 16px; align-items: flex-start;
+  }
+  .pain-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .pain-icon.orange { background: #FFF5E6; }
+  .pain-icon.red { background: #FFF0F0; }
+  .pain-icon.yellow { background: #FFFBE6; }
+  .pain-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .pain-card p { font-size: 13px; color: var(--text2); line-height: 1.65; }
+
+  /* Why Agent */
+  .why-agent {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px; margin-top: 24px; border-left: 3px solid var(--accent);
+  }
+  .why-agent h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .why-agent p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 8px; }
+  .why-agent strong { color: var(--text); }
+
+  /* Flow */
+  .flow-wrap { margin: 24px 0; overflow-x: auto; padding-bottom: 4px; }
+  .flow-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; min-width: 620px;
+  }
+  .flow-node {
+    border-radius: 10px; padding: 14px 12px; text-align: center;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1); cursor: default;
+    flex-shrink: 0;
+  }
+  .flow-node.small {
+    background: var(--bg); border: 1px dashed var(--border);
+    min-width: 80px; padding: 10px 8px;
+  }
+  .flow-node.small .icon { font-size: 16px; margin-bottom: 4px; }
+  .flow-node.small .label { font-size: 11px; font-weight: 600; }
+  .flow-node.small .sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .flow-node.hitl { border: 1px dashed var(--warm); background: #FFFAF0; }
+  .flow-node.hitl .icon { color: var(--warm); }
+  .flow-node.agent {
+    background: var(--bg2); border: 2px solid var(--border);
+    min-width: 110px; cursor: pointer;
+  }
+  .flow-node.agent:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .flow-node.agent.active { border-color: var(--accent); background: #FFF5F5; }
+  .flow-node.agent.dimmed { opacity: 0.45; transform: scale(0.95); }
+  .flow-node.agent .tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px;
+  }
+  .flow-node.agent .tag.blue { background: #EBF4FF; color: #2B6CB0; }
+  .flow-node.agent .tag.green { background: #F0FFF4; color: #276749; }
+  .flow-node.agent .tag.purple { background: #F3E8FF; color: #6B46C1; }
+  .flow-node.agent .name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .flow-node.agent .role { font-size: 10px; color: var(--text3); }
+  .flow-arrow { color: var(--text3); font-size: 14px; flex-shrink: 0; }
+
+  /* Detail Panel */
+  .flow-detail {
+    margin-top: 20px; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px; display: none;
+    animation: fadeInUp 0.3s ease;
+  }
+  .flow-detail.show { display: block; }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .detail-header .tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 5px;
+  }
+  .detail-header .tag.blue { background: #EBF4FF; color: #2B6CB0; }
+  .detail-header .tag.green { background: #F0FFF4; color: #276749; }
+  .detail-header .tag.purple { background: #F3E8FF; color: #6B46C1; }
+  .detail-header h3 { font-size: 17px; font-weight: 600; }
+  .detail-content p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 16px; }
+  .detail-content p strong { color: var(--text); }
+  .detail-list { display: flex; flex-direction: column; gap: 8px; }
+  .detail-item {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 13px; color: var(--text2);
+  }
+  .detail-item .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .detail-item .dot.red { background: var(--accent); }
+  .detail-item .dot.green { background: #276749; }
+  .detail-item .dot.purple { background: #6B46C1; }
+  .detail-item .text { flex: 1; }
+  .detail-item .text strong { color: var(--text); }
+  .detail-note {
+    margin-top: 14px; padding: 12px 16px; background: #FFF5E6; border: 1px solid #FBD38D;
+    border-radius: 8px; font-size: 12px; color: #744210; line-height: 1.65;
+  }
+  .detail-note strong { color: #5C3D00; }
+  .sub-agent-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .sub-agent-chip {
+    background: #EBF4FF; border: 1px solid #BEE3F8; border-radius: 6px;
+    padding: 5px 10px; font-size: 11px; color: #2B6CB0; font-weight: 500;
+  }
+
+  /* Highlights */
+  .highlight-grid { display: flex; flex-direction: column; gap: 14px; }
+  .highlight-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 24px;
+  }
+  .highlight-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .highlight-card p { font-size: 13px; color: var(--text2); line-height: 1.65; }
+  .highlight-card strong { color: var(--text); }
+
+  /* About / Full Loop */
+  .loop-section {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; margin-bottom: 14px;
+  }
+  .loop-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+  .loop-section p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .loop-section p strong { color: var(--text); }
+  .loop-section ol { margin: 10px 0 0 18px; padding: 0; }
+  .loop-section ol li { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 6px; }
+  .loop-section .loop-step {
+    display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start;
+  }
+  .loop-step-num {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+    color: white; font-size: 11px; font-weight: 600; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+  }
+  .loop-step-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .loop-step-text strong { color: var(--text); }
+
+  .about-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent); color: white;
+    border-radius: 100px; padding: 10px 22px;
+    font-size: 13px; font-weight: 500; text-decoration: none;
+    margin-top: 20px; transition: background 0.2s;
+  }
+  .about-link:hover { background: var(--accent2); }
+  .tech-stack { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .tech-tag {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+    font-size: 11px; color: var(--text2); padding: 4px 10px;
+  }
+
+  /* Scroll hint */
+  .scroll-hint {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--text3); letter-spacing: 1px;
+    animation: bounce 2s infinite; pointer-events: none;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+    50% { transform: translateX(-50%) translateY(6px); opacity: 1; }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    nav { padding: 0 16px; }
+    .nav-links { display: none; }
+    .page { padding: 32px 20px; }
+    .hero-content h1 { font-size: 32px; }
+    .page-dots { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">JoyOps</div>
+  <div class="nav-links">
+    <a data-page="0" class="active">首页</a>
+    <a data-page="1">痛点</a>
+    <a data-page="2">Why Agent</a>
+    <a data-page="3">架构</a>
+    <a data-page="4">亮点</a>
+    <a data-page="5">项目</a>
+  </div>
+</nav>
+
+<div class="page-dots" id="pageDots"></div>
+
+<div class="nav-arrow">
+  <button id="prevBtn" disabled>↑</button>
+  <span class="counter" id="counter">1 / 6</span>
+  <button id="nextBtn">↓</button>
+</div>
+
+<div class="page-container">
+
+  <!-- Page 0: Hero -->
+  <div class="page active" data-page="0">
+    <div class="page-inner">
+      <div class="hero-content">
+        <div class="badge">
+          <span class="star">★</span>
+          第十七届京东杯创业创新大赛 · 一等奖
+        </div>
+        <h1>JoyOps<br><span class="highlight">跨境智能选品 Agent</span></h1>
+        <p class="subtitle">
+          一个面向跨境电商采销人员的多 Agent 系统。输入品类和国家，自动完成选品调研、合规审查、本土化文案生成，把原本需要 2–3 周的手工流程压缩到分钟级。
+        </p>
+        <p class="meta-line">6 页交互展示 · 点击下方箭头或滚动翻页</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 1: Problem -->
+  <div class="page" data-page="1">
+    <div class="page-inner">
+      <div class="section-label">Problem</div>
+      <h2 class="section-title">传统工作流的三个瓶颈</h2>
+      <p class="section-desc">跨境采销人员接到任务，每一步都要手动搜索、整理、判断。</p>
+
+      <div class="pain-grid">
+        <div class="pain-card">
+          <div class="pain-icon orange">🔍</div>
+          <div>
+            <h3>调研耗时 2–3 周</h3>
+            <p>Amazon 热销、Google Trends、社交媒体声量分散在不同平台，汇总对齐本身就是马拉松。</p>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon red">⚠️</div>
+          <div>
+            <h3>合规风险不可控</h3>
+            <p>欧洲法规是双层结构——欧盟法 + 国家法。不同品类的检查路径完全不同，漏掉一条就是合规事故。</p>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-icon yellow">📝</div>
+          <div>
+            <h3>文案本地化质量低</h3>
+            <p>直接翻译，忽略当地流行用语、文化禁忌和广告法限制。上线后转化率远低于预期。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 2: Why Agent -->
+  <div class="page" data-page="2">
+    <div class="page-inner">
+      <div class="section-label">Why Agent</div>
+      <h2 class="section-title">为什么不是 Workflow，而是 Agent</h2>
+      <p class="section-desc">Workflow 查表，Agent 推理。当步骤该做什么、先做什么后做什么、甚至是否继续，都取决于输入内容时，只能用 Agent。</p>
+
+      <div class="why-agent">
+        <p><strong>选品调研：数据源冲突时，Workflow 卡住，Agent 能判断</strong></p>
+        <p>Workflow 可以按顺序调三个工具，但拿到"电商涨、社交跌、趋势平"的数据时，该信哪个？需不需要额外验证？这个判断依赖上下文，写不成规则。Agent 的推理能力不是锦上添花，是让系统能继续运转的前提。</p>
+      </div>
+
+      <div class="why-agent" style="margin-top:14px;">
+        <p><strong>合规审查：Agent 调用 skill，Workflow 写规则</strong></p>
+        <p>Workflow 是"if 品类 == X then 查 Y"。但新品类不断出现，规则写一条崩一条。Agent 把"查法规"封装成 skill，遇到新品类时自主判断该调用什么、组合什么。灵活调用封装好的能力和写死规则，是本质区别。</p>
+      </div>
+
+      <div class="why-agent" style="margin-top:14px;">
+        <p><strong>HITL 分叉：分支条件本身需要推理</strong></p>
+        <p>Workflow 也能做路由和终止，但只能基于预设条件。"高/中/低"风险不是简单查表，而是 Agent 综合品类、法规、上下文之后的判断。分支条件本身需要理解输入内容时，前置步骤必须是 Agent。</p>
+      </div>
+
+      <p style="margin-top:20px; font-size:13px; color:var(--text2); text-align:center;">
+        <strong style="color:var(--text);">Workflow 查表</strong>——条件写死，运行时不会变化  &nbsp;·&nbsp;  <strong style="color:var(--accent);">Agent 推理</strong>——根据运行时上下文自主判断
+      </p>
+    </div>
+  </div>
+
+  <!-- Page 3: Architecture -->
+  <div class="page" data-page="3">
+    <div class="page-inner">
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">点击节点，查看设计</h2>
+      <p class="section-desc">用户输入品类 + 国家，三 Agent 串行执行。合规审查后有人工确认节点——风险太高直接终止。</p>
+
+      <div class="flow-wrap">
+        <div class="flow-row">
+          <div class="flow-node small">
+            <div class="icon">📝</div>
+            <div class="label">输入</div>
+            <div class="sub">品类 + 国家</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node agent" data-agent="scout">
+            <div class="tag blue">Scout</div>
+            <div class="name">选品调研</div>
+            <div class="role">3子Agent + 交叉判断</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node agent" data-agent="guard">
+            <div class="tag green">Guard</div>
+            <div class="name">合规审查</div>
+            <div class="role">RAG 向量检索</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node small hitl">
+            <div class="icon">✋</div>
+            <div class="label">HITL</div>
+            <div class="sub">继续 / 终止</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node agent" data-agent="marketing">
+            <div class="tag purple">Marketing</div>
+            <div class="name">本土化文案</div>
+            <div class="role">目标语言直写</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node small">
+            <div class="icon">📊</div>
+            <div class="label">输出</div>
+            <div class="sub">选品报告</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-detail" id="flow-detail">
+        <div class="detail-content" id="detail-scout" style="display:none">
+          <div class="detail-header">
+            <span class="tag blue">Scout</span>
+            <h3>选品调研 Agent</h3>
+          </div>
+          <p><strong>3 子 Agent 并行采集</strong>：电商数据、社交声量、搜索趋势分别独立采集，Scout 主控汇总后做交叉判断，不是加权平均。</p>
+          <div class="sub-agent-chips">
+            <span class="sub-agent-chip">电商数据</span>
+            <span class="sub-agent-chip">社交声量</span>
+            <span class="sub-agent-chip">搜索趋势</span>
+          </div>
+          <div class="detail-list">
+            <div class="detail-item"><div class="dot red"></div><div class="text"><strong>需求-竞争比</strong>：高销量 + 高集中度 = 红海，不是机会</div></div>
+            <div class="detail-item"><div class="dot red"></div><div class="text"><strong>趋势-声量一致性</strong>：搜索涨但社交冷 = 泡沫。两者一致才是真实需求</div></div>
+            <div class="detail-item"><div class="dot red"></div><div class="text"><strong>痛点-差异化空间</strong>：用户吐槽明确 + 竞品没解决 = 可切入</div></div>
+          </div>
+          <div class="detail-note">
+            <strong>动态权重</strong>：新品类偏重社交数据，成熟品类偏重电商数据，季节性品类偏重趋势数据。Agent 自主判断品类生命周期阶段调整权重。
+          </div>
+        </div>
+
+        <div class="detail-content" id="detail-guard" style="display:none">
+          <div class="detail-header">
+            <span class="tag green">Guard</span>
+            <h3>合规审查 Agent</h3>
+          </div>
+          <p><strong>RAG 向量检索</strong>：法规知识库作为检索源，Agent 根据品类自主推理法规分类标签，构建检索 query，返回匹配法规条文和强制等级。</p>
+          <div class="detail-list">
+            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>品类推理</strong>：空气炸锅 → "带电产品" + "食品接触材料"（炸篮接触食物）。基于常识，不调用工具</div></div>
+            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>向量检索</strong>：构建 query 检索法规知识库（欧盟法 + 国家法 + 行业标准），返回匹配法规条文 + 强制等级</div></div>
+            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>风险评估</strong>：输出风险等级（低 / 中低 / 中 / 高）+ 合规要点 + 认证周期</div></div>
+          </div>
+          <div class="detail-note">
+            <strong>HITL 衔接</strong>：高风险 → 用户终止，不选这个品。中风险 → 用户确认后继续，Marketing 接收合规约束（如"不可用绝对化表达"）。
+          </div>
+        </div>
+
+        <div class="detail-content" id="detail-marketing" style="display:none">
+          <div class="detail-header">
+            <span class="tag purple">Marketing</span>
+            <h3>本土化文案 Agent</h3>
+          </div>
+          <p><strong>直接用目标语言写，不是翻译</strong>：德国消费者的阅读习惯、说服逻辑和中文完全不同。翻译工具做不到本土化。</p>
+          <div class="detail-list">
+            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>搜索趋势</strong>：获取当地社交媒体热门用语，提取可用关键词</div></div>
+            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>直接生成</strong>：用德语写文案，根据 HITL 传递的合规约束调整内容（如标注 CE 标志、不用绝对化表达）</div></div>
+            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>广告法审查</strong>：检查文化敏感表达和广告法违规</div></div>
+            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>SEO 优化</strong>：按 Amazon.de 规则优化标题和关键词</div></div>
+          </div>
+          <div class="detail-note">
+            <strong>合规联动</strong>：接收 HITL 传递的合规约束，在文案中规避 Guard 标记的敏感表达。输出包含 compliance_adhered 字段，记录遵守了哪些约束。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 4: Highlights -->
+  <div class="page" data-page="4">
+    <div class="page-inner">
+      <div class="section-label">Highlights</div>
+      <h2 class="section-title">三个设计选择</h2>
+      <p class="section-desc">不是"大模型写了个流程"，而是为不确定路径的复杂场景做了工程化设计。</p>
+
+      <div class="highlight-grid">
+        <div class="highlight-card">
+          <h4>Agent 内部嵌入人类经验，不是纯 AI 自洽</h4>
+          <p>Scout 的动态权重不是 Agent 自己拍脑袋定的，而是参考了实际采销人员的判断逻辑——新品类没人买过，电商数据参考价值低，社交讨论反而更真实；成熟品类看销量就够了。本土化文案也不是大模型直接生成，背后有一个文化 DNA 库：由有当地生活经验的专家标注的流行用语、文化禁忌、广告法红线。Agent 调用的是这些人类经验，而不是自己瞎编。</p>
+        </div>
+        <div class="highlight-card">
+          <h4>Human-in-the-Loop，不是全盘交给 AI</h4>
+          <p>合规审查后流程暂停，采销人员看风险卡片做三选一：低风险继续、中风险知悉后继续、高风险终止。高风险直接终止，不选这个品，不需要后续写文案。人在关键节点做决策，不是一路走到黑。Agent 负责信息收集和初步判断，但选择权在人手里。</p>
+        </div>
+        <div class="highlight-card">
+          <h4>竞品没有做全链路，尤其是合规</h4>
+          <p>市面上的选品工具要么只做调研（Jungle Scout、Helium 10），要么只做文案（Copy.ai），要么只做合规（法规数据库查询），但没有把三个环节串起来。更关键的是，它们没有品类自适应的合规路径——输入一个新品类，不会自动推理该查什么法规。JoyOps 做的是全链路闭环，从调研到合规到文案，而且是品类自适应的。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page 5: About / Full Loop -->
+  <div class="page" data-page="5">
+    <div class="page-inner">
+      <div class="section-label">About</div>
+      <h2 class="section-title">从比赛到产品化的思考</h2>
+      <p class="section-desc">京东杯给了我一个真实的采销场景，但不到 1 个月的赛程当时有很多问题没有思考清楚——比如为什么用 Agent 而不是 Workflow、每个 Agent 具体调用哪些工具、合规审查后遇到阻断项怎么处理。比赛结束后，我才基于持续思考把这些卡点逐一补完，这是迭代后的版本。</p>
+
+      <div class="loop-section">
+        <h4>商业化路径</h4>
+        <p>这个系统的目标客户分三层。第一层是<strong>跨境电商平台内部的采销团队</strong>——目前最痛点的人群，他们每天手动做这些调研，时间成本最高。第二层是<strong>年 GMV 1000 万以上的成熟跨境卖家</strong>，他们有专职选品人员但缺乏合规和本地化能力。第三层是<strong>新进入欧洲市场的品牌</strong>，对当地法规和消费文化完全陌生，需要一站式解决方案。</p>
+        <p style="margin-top:10px">变现模式上，第一层走内部 SaaS 或 API 调用，按任务量计费；第二三层走订阅制，按功能模块（调研/合规/文案）分档。</p>
+      </div>
+
+      <div class="loop-section">
+        <h4>设计约束与权衡</h4>
+        <p>不是无限调用工具的大模型 Demo。每个任务限制 <strong>30 次工具调用</strong>和 <strong>50k Token</strong>，因为真实的采销人员不会为一个选品任务等半小时。所以 Scout 的动态权重不只是为了更准，也是为了在信息足够做判断时尽早停止采集，不浪费调用额度。</p>
+      </div>
+
+      <div class="tech-stack">
+        <span class="tech-tag">Dify / Coze</span>
+        <span class="tech-tag">GPT-4o / Claude</span>
+        <span class="tech-tag">RAG 向量检索</span>
+        <span class="tech-tag">FastAPI</span>
+        <span class="tech-tag">React</span>
+        <span class="tech-tag">SQLite</span>
+      </div>
+
+      <a href="crossborder-agent-design.md" class="about-link" target="_blank">查看完整设计文档 →</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="scroll-hint" id="scrollHint">↓ 滚轮 / 箭头翻页</div>
+
+<script>
+  (function() {
+    var pages = document.querySelectorAll('.page');
+    var navLinks = document.querySelectorAll('.nav-links a');
+    var prevBtn = document.getElementById('prevBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    var counter = document.getElementById('counter');
+    var scrollHint = document.getElementById('scrollHint');
+    var dotsContainer = document.getElementById('pageDots');
+    var total = pages.length;
+    var current = 0;
+    var isAnimating = false;
+
+    // Build dots
+    for (var i = 0; i < total; i++) {
+      var dot = document.createElement('div');
+      dot.className = 'page-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('data-page', i);
+      dot.addEventListener('click', function() { goTo(parseInt(this.getAttribute('data-page'))); });
+      dotsContainer.appendChild(dot);
+    }
+    var dots = document.querySelectorAll('.page-dot');
+
+    function updatePageClasses() {
+      pages.forEach(function(p, i) {
+        p.classList.remove('active', 'prev');
+        if (i === current) p.classList.add('active');
+        else if (i < current) p.classList.add('prev');
+      });
+    }
+
+    function goTo(index) {
+      if (index < 0 || index >= total || isAnimating || index === current) return;
+      isAnimating = true;
+      pages[current].classList.remove('active');
+      pages[current].classList.add('prev');
+      current = index;
+      updatePageClasses();
+
+      // Update nav
+      navLinks.forEach(function(a) {
+        a.classList.toggle('active', parseInt(a.getAttribute('data-page')) === Math.floor(current));
+      });
+
+      // Update dots
+      dots.forEach(function(d, i) { d.classList.toggle('active', i === current); });
+
+      // Update counter & buttons
+      counter.textContent = (current + 1) + ' / ' + total;
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === total - 1;
+
+      // Hide scroll hint after first navigation
+      if (current > 0) scrollHint.style.display = 'none';
+
+      setTimeout(function() { isAnimating = false; }, 550);
+    }
+
+    // Button events
+    prevBtn.addEventListener('click', function() { goTo(current - 1); });
+    nextBtn.addEventListener('click', function() { goTo(current + 1); });
+
+    // Nav link events
+    navLinks.forEach(function(a) {
+      a.addEventListener('click', function() { goTo(parseInt(this.getAttribute('data-page'))); });
+    });
+
+    // Wheel events
+    var wheelTimeout = null;
+    document.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (isAnimating) return;
+      if (wheelTimeout) return;
+      wheelTimeout = setTimeout(function() { wheelTimeout = null; }, 800);
+      if (e.deltaY > 30) goTo(current + 1);
+      else if (e.deltaY < -30) goTo(current - 1);
+    }, { passive: false });
+
+    // Keyboard events
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    });
+
+    // Touch events
+    var touchStartY = null;
+    document.addEventListener('touchstart', function(e) { touchStartY = e.touches[0].clientY; }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      if (touchStartY === null) return;
+      var touchEndY = e.changedTouches[0].clientY;
+      var diff = touchStartY - touchEndY;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) goTo(current + 1);
+        else goTo(current - 1);
+      }
+      touchStartY = null;
+    }, { passive: true });
+
+    // Agent node click (on architecture page)
+    var agents = document.querySelectorAll('.flow-node.agent');
+    var detail = document.getElementById('flow-detail');
+    var currentActive = null;
+
+    agents.forEach(function(node) {
+      node.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var agentName = node.getAttribute('data-agent');
+        if (currentActive === agentName) {
+          node.classList.remove('active');
+          agents.forEach(function(a) { a.classList.remove('dimmed'); });
+          detail.classList.remove('show');
+          document.querySelectorAll('.detail-content').forEach(function(c) { c.style.display = 'none'; });
+          currentActive = null;
+          return;
+        }
+        agents.forEach(function(a) { a.classList.remove('active'); a.classList.add('dimmed'); });
+        node.classList.remove('dimmed'); node.classList.add('active');
+        document.querySelectorAll('.detail-content').forEach(function(c) { c.style.display = 'none'; });
+        var content = document.getElementById('detail-' + agentName);
+        if (content) content.style.display = 'block';
+        detail.classList.add('show');
+        currentActive = agentName;
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
