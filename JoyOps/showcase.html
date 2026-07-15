@@ -133,6 +133,7 @@
   .hero-content .meta-line {
     font-size: 13px; color: var(--text3); margin-top: 20px;
   }
+  .hero-content .meta-line + .demo-link-wrap { margin-top: 18px; }
 
   /* Pain Points */
   .pain-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -341,9 +342,15 @@
         </div>
         <h1>JoyOps<br><span class="highlight">跨境智能选品 Agent</span></h1>
         <p class="subtitle">
-          一个面向跨境电商采销人员的多 Agent 系统。输入品类和国家，自动完成选品调研、合规审查、本土化文案生成，把原本需要 2–3 周的手工流程压缩到分钟级。
+          一个面向跨境电商采销人员的多 Agent 系统。输入品类和国家，自动完成选品调研、合规审查、本土化文案生成，把原本需要 2–3 周的手工流[...]
         </p>
         <p class="meta-line">6 页交互展示 · 点击下方箭头或滚动翻页</p>
+
+        <!-- 新增按钮：打开交互 Demo（同目录下的 joyops-workbench-demo.html），在新标签页打开 -->
+        <div class="demo-link-wrap" style="display:flex;justify-content:center;">
+          <a href="joyops-workbench-demo.html" class="about-link" target="_blank" rel="noopener">打开交互 Demo →</a>
+        </div>
+
       </div>
     </div>
   </div>
@@ -390,21 +397,21 @@
 
       <div class="why-agent">
         <p><strong>选品调研：数据源冲突时，Workflow 卡住，Agent 能判断</strong></p>
-        <p>Workflow 可以按顺序调三个工具，但拿到"电商涨、社交跌、趋势平"的数据时，该信哪个？需不需要额外验证？这个判断依赖上下文，写不成规则。Agent 的推理能力不是锦上添花，是让系统能继续运转的前提。</p>
+        <p>Workflow 可以按顺序调三个工具，但拿到"电商涨、社交跌、趋势平"的数据时，该信哪个？需不需要额外验证？这个判断依赖上下文，写不成��[...]
       </div>
 
       <div class="why-agent" style="margin-top:14px;">
         <p><strong>合规审查：Agent 调用 skill，Workflow 写规则</strong></p>
-        <p>Workflow 是"if 品类 == X then 查 Y"。但新品类不断出现，规则写一条崩一条。Agent 把"查法规"封装成 skill，遇到新品类时自主判断该调用什么、组合什么。灵活调用封装好的能力和写死规则，是本质区别。</p>
+        <p>Workflow 是"if 品类 == X then 查 Y"。但新品类不断出现，规则写一条崩一条。Agent 把"查法规"封装成 skill，遇到新品类时自主判断该调用什么、��[...]
       </div>
 
       <div class="why-agent" style="margin-top:14px;">
         <p><strong>HITL 分叉：分支条件本身需要推理</strong></p>
-        <p>Workflow 也能做路由和终止，但只能基于预设条件。"高/中/低"风险不是简单查表，而是 Agent 综合品类、法规、上下文之后的判断。分支条件本身需要理解输入内容时，前置步骤必须是 Agent。</p>
+        <p>Workflow 也能做路由和终止，但只能基于预设条件."高/中/低"风险不是简单查表，而是 Agent 综合品类、法规、上下文之后的判断。分支条件��[...]
       </div>
 
       <p style="margin-top:20px; font-size:13px; color:var(--text2); text-align:center;">
-        <strong style="color:var(--text);">Workflow 查表</strong>——条件写死，运行时不会变化  &nbsp;·&nbsp;  <strong style="color:var(--accent);">Agent 推理</strong>——根据运行时上下文自主判断
+        <strong style="color:var(--text);">Workflow 查表</strong>——条件写死，运行时不会变化  &nbsp;·&nbsp;  <strong style="color:var(--accent);">Agent 推理</strong>——根�[...]
       </p>
     </div>
   </div>
@@ -470,11 +477,11 @@
           </div>
           <div class="detail-list">
             <div class="detail-item"><div class="dot red"></div><div class="text"><strong>需求-竞争比</strong>：高销量 + 高集中度 = 红海，不是机会</div></div>
-            <div class="detail-item"><div class="dot red"></div><div class="text"><strong>趋势-声量一致性</strong>：搜索涨但社交冷 = 泡沫。两者一致才是真实需求</div></div>
+            <div class="detail-item"><div class="dot red"></div><div class="text"><strong>趋势-声量一致性</strong>：搜索涨但社交冷 = 泡沫。两者一致才是真实需求</div></[...]
             <div class="detail-item"><div class="dot red"></div><div class="text"><strong>痛点-差异化空间</strong>：用户吐槽明确 + 竞品没解决 = 可切入</div></div>
           </div>
           <div class="detail-note">
-            <strong>动态权重</strong>：新品类偏重社交数据，成熟品类偏重电商数据，季节性品类偏重趋势数据。Agent 自主判断品类生命周期阶段调整权重。
+            <strong>动态权重</strong>：新品类偏重社交数据，成熟品类偏重电商数据，季节性品类偏重趋势数据。Agent 自主判断品类生命周期阶段调整权�[...]
           </div>
         </div>
 
@@ -483,11 +490,11 @@
             <span class="tag green">Guard</span>
             <h3>合规审查 Agent</h3>
           </div>
-          <p><strong>RAG 向量检索</strong>：法规知识库作为检索源，Agent 根据品类自主推理法规分类标签，构建检索 query，返回匹配法规条文和强制等级。</p>
+          <p><strong>RAG 向量检索</strong>：法规知识库作为检索源，Agent 根据品类自主推理法规分类标签，构建检索 query，返回匹配法规条文和强制等级��[...]
           <div class="detail-list">
-            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>品类推理</strong>：空气炸锅 → "带电产品" + "食品接触材料"（炸篮接触食物）。基于常识，不调用工具</div></div>
-            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>向量检索</strong>：构建 query 检索法规知识库（欧盟法 + 国家法 + 行业标准），返回匹配法规条文 + 强制等级</div></div>
-            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>风险评估</strong>：输出风险等级（低 / 中低 / 中 / 高）+ 合规要点 + 认证周期</div></div>
+            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>品类推理</strong>：空气炸锅 → "带电产品" + "食品接触材料"（炸篮接触食物）�[...]
+            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>向量检索</strong>：构建 query 检索法规知识库（欧盟法 + 国家法 + 行业标准），[...]
+            <div class="detail-item"><div class="dot green"></div><div class="text"><strong>风险评估</strong>：输出风险等级（低 / 中低 / 中 / 高）+ 合规要点 + 认证周期</[...]
           </div>
           <div class="detail-note">
             <strong>HITL 衔接</strong>：高风险 → 用户终止，不选这个品。中风险 → 用户确认后继续，Marketing 接收合规约束（如"不可用绝对化表达"）。
@@ -502,12 +509,12 @@
           <p><strong>直接用目标语言写，不是翻译</strong>：德国消费者的阅读习惯、说服逻辑和中文完全不同。翻译工具做不到本土化。</p>
           <div class="detail-list">
             <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>搜索趋势</strong>：获取当地社交媒体热门用语，提取可用关键词</div></div>
-            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>直接生成</strong>：用德语写文案，根据 HITL 传递的合规约束调整内容（如标注 CE 标志、不用绝对化表达）</div></div>
+            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>直接生成</strong>：用德语写文案，根据 HITL 传递的合规约束调整内容（如标注[...]
             <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>广告法审查</strong>：检查文化敏感表达和广告法违规</div></div>
             <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>SEO 优化</strong>：按 Amazon.de 规则优化标题和关键词</div></div>
           </div>
           <div class="detail-note">
-            <strong>合规联动</strong>：接收 HITL 传递的合规约束，在文案中规避 Guard 标记的敏感表达。输出包含 compliance_adhered 字段，记录遵守了哪些约束。
+            <strong>合规联动</strong>：接收 HITL 传递的合规约束，在文案中规避 Guard 标记的敏感表达。输出包含 compliance_adhered 字段，记录遵守了哪些约�[...]
           </div>
         </div>
       </div>
@@ -519,20 +526,20 @@
     <div class="page-inner">
       <div class="section-label">Highlights</div>
       <h2 class="section-title">三个设计选择</h2>
-      <p class="section-desc">不是"大模型写了个流程"，而是为不确定路径的复杂场景做了工程化设计。</p>
+      <p class="section-desc">不是"大模型写了个流程”，而是为不确定路径的复杂场景做了工程化设计。</p>
 
       <div class="highlight-grid">
         <div class="highlight-card">
           <h4>Agent 内部嵌入人类经验，不是纯 AI 自洽</h4>
-          <p>Scout 的动态权重不是 Agent 自己拍脑袋定的，而是参考了实际采销人员的判断逻辑——新品类没人买过，电商数据参考价值低，社交讨论反而更真实；成熟品类看销量就够了。本土化文案也不是大模型直接生成，背后有一个文化 DNA 库：由有当地生活经验的专家标注的流行用语、文化禁忌、广告法红线。Agent 调用的是这些人类经验，而不是自己瞎编。</p>
+          <p>Scout 的动态权重不是 Agent 自己拍脑袋定的，而是参考了实际采销人员的判断逻辑——新品类没人买过，电商数据参考价值低，社交讨论反�[...]
         </div>
         <div class="highlight-card">
           <h4>Human-in-the-Loop，不是全盘交给 AI</h4>
-          <p>合规审查后流程暂停，采销人员看风险卡片做三选一：低风险继续、中风险知悉后继续、高风险终止。高风险直接终止，不选这个品，不需要后续写文案。人在关键节点做决策，不是一路走到黑。Agent 负责信息收集和初步判断，但选择权在人手里。</p>
+          <p>合规审查后流程暂停，采销人员看风险卡片做三选一：低风险继续、中风险知悉后继续、高风险终止。高风险直接终止，不选这个品，不��[...]
         </div>
         <div class="highlight-card">
           <h4>竞品没有做全链路，尤其是合规</h4>
-          <p>市面上的选品工具要么只做调研（Jungle Scout、Helium 10），要么只做文案（Copy.ai），要么只做合规（法规数据库查询），但没有把三个环节串起来。更关键的是，它们没有品类自适应的合规路径——输入一个新品类，不会自动推理该查什么法规。JoyOps 做的是全链路闭环，从调研到合规到文案，而且是品类自适应的。</p>
+          <p>市面上的选品工具要么只做调研（Jungle Scout、Helium 10），要么只做文案（Copy.ai），要么只做合规（法规数据库查询），但没有把三个环节�[...]
         </div>
       </div>
     </div>
@@ -543,17 +550,17 @@
     <div class="page-inner">
       <div class="section-label">About</div>
       <h2 class="section-title">从比赛到产品化的思考</h2>
-      <p class="section-desc">京东杯给了我一个真实的采销场景，但不到 1 个月的赛程当时有很多问题没有思考清楚——比如为什么用 Agent 而不是 Workflow、每个 Agent 具体调用哪些工具、合规审查后遇到阻断项怎么处理。比赛结束后，我才基于持续思考把这些卡点逐一补完，这是迭代后的版本。</p>
+      <p class="section-desc">京东杯给了我一个真实的采销场景，但不到 1 个月的赛程当时有很多问题没有思考清楚——比如为什么用 Agent 而不是 Workflow��[...]
 
       <div class="loop-section">
         <h4>商业化路径</h4>
-        <p>这个系统的目标客户分三层。第一层是<strong>跨境电商平台内部的采销团队</strong>——目前最痛点的人群，他们每天手动做这些调研，时间成本最高。第二层是<strong>年 GMV 1000 万以上的成熟跨境卖家</strong>，他们有专职选品人员但缺乏合规和本地化能力。第三层是<strong>新进入欧洲市场的品牌</strong>，对当地法规和消费文化完全陌生，需要一站式解决方案。</p>
-        <p style="margin-top:10px">变现模式上，第一层走内部 SaaS 或 API 调用，按任务量计费；第二三层走订阅制，按功能模块（调研/合规/文案）分档。</p>
+        <p>这个系统的目标客户分三层。第一层是<strong>跨境电商平台内部的采销团队</strong>——目前最痛点的人群，他们每天手动做这些调研，时间��[...]
+        <p style="margin-top:10px">变现模式上，第一层走内部 SaaS 或 API 调用，按任务量计费；第二三层走订阅制，按功能模块（调研/合规/文案）分档。</p[...]
       </div>
 
       <div class="loop-section">
         <h4>设计约束与权衡</h4>
-        <p>不是无限调用工具的大模型 Demo。每个任务限制 <strong>30 次工具调用</strong>和 <strong>50k Token</strong>，因为真实的采销人员不会为一个选品任务等半小时。所以 Scout 的动态权重不只是为了更准，也是为了在信息足够做判断时尽早停止采集，不浪费调用额度。</p>
+        <p>不是无限调用工具的大模型 Demo。每个任务限制 <strong>30 次工具调用</strong>和 <strong>50k Token</strong>，因为真实的采销人员不会为一个选品任��[...]
       </div>
 
       <div class="tech-stack">
