@@ -415,8 +415,8 @@
       </div>
 
       <div class="why-agent" style="margin-top:14px;">
-        <p><strong>合规审查：Agent 调用 skill，Workflow 写规则</strong></p>
-        <p>Workflow 是"if 品类 == X then 查 Y"。但新品类不断出现，规则写一条崩一条。Agent 把"查法规"封装成 skill，遇到新品类时自主判断该调用什么、组合什么。灵活调用封装好的能力和写死规则，是本质区别。</p>
+        <p><strong>合规审查：从僵化规则到智能判断</strong></p>
+        <p>传统合规依赖预设规则（如“品类=X则查Y法条”），但新品类频出，规则难以维护。智能Agent将“法规查询”封装为Skill，面对新品类时自主推断法规分类（如“锅”在意大利需查“带电产品”+“食品接触材料”），智能调用组合多个Skill，生成含时间线（如认证周期4-7周）和风险评级的结构化报告，实现动态问题解决而非静态规则执行。</p>
       </div>
 
       <div class="why-agent" style="margin-top:14px;">
@@ -519,17 +519,17 @@
           <div class="detail-header">
             <span class="tag purple">Marketing</span>
             <h3>本土化文案 Agent</h3>
-          </div>
-          <p><strong>直接用目标语言写，不是翻译</strong>：德国消费者的阅读习惯、说服逻辑和中文完全不同。翻译工具做不到本土化。</p>
-          <div class="detail-list">
-            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>搜索趋势</strong>：获取当地社交媒体热门用语，提取可用关键词</div></div>
-            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>直接生成</strong>：用德语写文案，根据 HITL 传递的合规约束调整内容（如标注 CE 标志、不用绝对化表达）</div></div>
-            <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>广告法审查 + SEO 优化</strong>：检查文化敏感表达和广告法违规</div></div>
-          </div>
-          <div class="detail-note">
-            <strong>合规联动</strong>：接收 HITL 传递的合规约束，在文案中规避 Guard 标记的敏感表达。输出包含 compliance_adhered 字段，记录遵守了哪些约束。
-          </div>
+            </div>
+            <p><strong>直接从翻译到文化洞察与合规生成</strong>：传统文案依赖翻译工具，但德国消费者的阅读习惯和说服逻辑与中文截然不同，翻译工具做不到本土化。智能Agent的解决方案是：</p>
+            <div class="detail-list">
+              <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>搜索趋势与文化洞察</strong>：获取当地社交媒体热门用语，提取可用关键词（如"Friggitrice ad aria"月搜索21.8万次），并分析消费者画像（如意大利家庭用户重视健康与外观)</div></div>
+              <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>直接生成与合规内嵌</strong>：直接用目标语言（意大利语）写文案，根据Guard传递的合规约束调整内容（如标注CE标志、不用绝对化表达），并内嵌文化偏好（如使用Arancini等传统食谱名称）</div></div>
+              <div class="detail-item"><div class="dot purple"></div><div class="text"><strong>广告法审查与合规联动</strong>：检查文化敏感表达和广告法违规，接收Guard的合规约束，在文案中规避敏感表达</div></div>
         </div>
+        <div class="detail-note">
+          <strong>结构化输出与闭环验证</strong>：输出记录遵守了哪些约束，实现从数据抓取、文化分析、合规审查到文案生成的全链路自动化与可验证性。
+        </div>
+      </div>
       </div>
     </div>
   </div>
