@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JoyOps · CrossBorder Ops Agent</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F2F0EC;--surface:#FFFFFF;--surface2:#F8F7F5;--surface3:#F0EEE9;
+  --border:#E4E1DB;--border2:#CCC9C2;
+  --text:#1C1B18;--text2:#6B6860;--text3:#AEAAA4;
+  --red:#DC2626;--red-lt:#FEF2F2;--red-bd:#FECACA;
+  --blue:#2563EB;--blue-lt:#EFF6FF;--blue-bd:#BFDBFE;
+  --green:#16A34A;--green-lt:#F0FDF4;--green-bd:#BBF7D0;
+  --purple:#7C3AED;--purple-lt:#F5F3FF;--purple-bd:#DDD6FE;
+  --amber:#D97706;--amber-lt:#FFFBEB;--amber-bd:#FDE68A;
+  --sh:0 1px 3px rgba(0,0,0,.07);
+  --sh-md:0 4px 16px rgba(0,0,0,.1);
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.6}
+
+/* ── Shell ── */
+.app{height:100vh;display:flex;flex-direction:column}
+
+/* ── Topbar ── */
+.topbar{height:46px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;box-shadow:var(--sh)}
+.logo{font-size:14px;font-weight:700;letter-spacing:-.3px}.logo em{color:var(--red);font-style:normal}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-pill{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase}
+.tp-red{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+.tp-blue{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)}
+.tp-green{background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+.tp-purple{background:var(--purple-lt);color:var(--purple);border:1px solid var(--purple-bd)}
+
+/* ── Body split ── */
+.body{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* ── LEFT: chat panel ── */
+.chat-panel{width:480px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface)}
+
+.chat-history{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+
+/* bubbles */
+.bubble{display:flex;gap:8px;align-items:flex-start;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.bubble-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px}
+.av-agent{background:var(--red-lt);border:1px solid var(--red-bd);color:var(--red)}
+.av-system{background:var(--blue-lt);border:1px solid var(--blue-bd);color:var(--blue)}
+.bubble-body{flex:1;max-width:360px}
+.bubble-name{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:.3px;text-transform:uppercase}
+.bubble-text{font-size:13px;color:var(--text2);line-height:1.65;background:var(--surface2);border:1px solid var(--border);border-radius:3px 10px 10px 10px;padding:9px 13px}
+.bubble-text strong{color:var(--text)}
+.bubble-text.agent-thinking{background:var(--purple-lt);border-color:var(--purple-bd);color:var(--purple)}
+.bubble-text.agent-thinking strong{color:var(--purple)}
+.bubble-text.system-msg{background:var(--blue-lt);border-color:var(--blue-bd);color:var(--blue)}
+
+/* user bubble (right) */
+.bubble.user{flex-direction:row-reverse}
+.bubble.user .bubble-body{max-width:280px}
+.bubble.user .bubble-text{background:var(--red);color:white;border-color:var(--red);border-radius:10px 3px 10px 10px}
+.bubble.user .bubble-name{text-align:right}
+
+/* tool call log */
+.tool-call{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);padding:4px 0;animation:fadeUp .3s ease}
+.tc-icon{font-size:10px}
+.tc-tag{font-family:monospace;font-size:10px;background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd);padding:1px 6px;border-radius:3px}
+.tc-status{font-size:10px}
+.tc-status.ok{color:var(--green)}
+.tc-status.spin{color:var(--amber);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* choice chips */
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;animation:fadeUp .3s ease}
+.chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);transition:all .15s}
+.chip:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+.chip.selected{border-color:var(--red);background:var(--red);color:white}
+.chip:disabled,.chip.disabled{opacity:.4;pointer-events:none}
+
+/* hitl buttons */
+.hitl-btns{display:flex;flex-direction:column;gap:6px;margin-top:4px;animation:fadeUp .3s ease}
+.hitl-btn{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px}
+.hb-go{background:var(--green-lt);color:var(--green);border-color:var(--green-bd)}
+.hb-go:hover{background:var(--green);color:white}
+.hb-noted{background:var(--amber-lt);color:var(--amber);border-color:var(--amber-bd)}
+.hb-noted:hover{background:var(--amber);color:white}
+.hb-stop{background:var(--red-lt);color:var(--red);border-color:var(--red-bd)}
+.hb-stop:hover{background:var(--red);color:white}
+
+/* input area */
+.chat-input-area{flex-shrink:0;padding:14px 16px;border-top:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:10px}
+
+/* country selector */
+.country-row{display:flex;gap:6px;flex-wrap:wrap}
+.country-btn{padding:6px 13px;border-radius:7px;font-size:13px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
+.country-btn:hover{border-color:var(--red);color:var(--red)}
+.country-btn.active{border-color:var(--red);background:var(--red-lt);color:var(--red);font-weight:600}
+
+.input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;color:var(--text);background:var(--surface2);outline:none;resize:none;font-family:inherit;line-height:1.55;transition:border-color .2s;max-height:140px;min-height:72px}
+.chat-input:focus{border-color:var(--red)}
+.chat-input:disabled{opacity:.5;cursor:not-allowed}
+.send-btn{width:42px;height:42px;border-radius:9px;background:var(--red);color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:background .2s;flex-shrink:0}
+.send-btn:hover:not(:disabled){background:#B91C1C}
+.send-btn:disabled{background:var(--text3);cursor:not-allowed}
+
+/* ── RIGHT: report panel ── */
+.report-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:0}
+
+.report-header{height:46px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:10px}
+.rh-title{font-size:13px;font-weight:600;flex:1}
+.rh-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px}
+.rhb-waiting{background:var(--surface3);color:var(--text3);border:1px solid var(--border)}
+.rhb-running{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-bd)}
+.rhb-done{background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+
+.report-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;min-height:0}
+
+/* empty state */
+.report-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text3)}
+.re-icon{font-size:40px;opacity:.35}
+.re-title{font-size:14px;font-weight:600;color:var(--text2)}
+.re-sub{font-size:12px;text-align:center;max-width:240px;line-height:1.65}
+
+/* report sections */
+.r-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;animation:fadeUp .4s ease}
+.rs-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.rs-head h3{font-size:12px;font-weight:600;flex:1}
+.rs-tag{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px}
+.rst-blue{background:var(--blue-lt);color:var(--blue)}
+.rst-green{background:var(--green-lt);color:var(--green)}
+.rst-purple{background:var(--purple-lt);color:var(--purple)}
+.rst-amber{background:var(--amber-lt);color:var(--amber)}
+.rs-body{padding:14px 16px}
+
+/* score card */
+.score-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.score-num{font-size:36px;font-weight:700;color:var(--green);letter-spacing:-1px;line-height:1}
+.score-label{font-size:11px;color:var(--text2)}
+.score-verdict{font-size:13px;font-weight:600;color:var(--green)}
+.score-badge{display:inline-flex;align-items:center;gap:4px;background:var(--green-lt);border:1px solid var(--green-bd);color:var(--green);font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;margin-top:4px}
+
+/* data grid */
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.data-card{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.dc-label{font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:500}
+.dc-value{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.dc-sub{font-size:10px;color:var(--text2);margin-top:2px}
+.dc-value.green{color:var(--green)}
+.dc-value.amber{color:var(--amber)}
+.dc-value.blue{color:var(--blue)}
+
+/* ── Scout 三列布局 ── */
+.scout-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;min-width:0;align-items:start}
+.scout-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:visible;display:flex;flex-direction:column}
+.sc-head{padding:14px 16px 10px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:10px 10px 0 0}
+.sc-agent-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:4px}
+.sc-agent-name{font-size:15px;font-weight:700;color:var(--text);line-height:1.3}
+.sc-agent-src{font-size:10px;color:var(--text3);margin-top:3px}
+.sc-body{padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+
+/* metric rows */
+.metric-row{padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px}
+.mr-label{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:3px}
+.mr-value{font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1.2}
+.mr-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.mr-value.green{color:var(--green)}
+.mr-value.amber{color:var(--amber)}
+.mr-value.blue{color:var(--blue)}
+.mr-value.red{color:var(--red)}
+
+/* market share stacked bar */
+.share-bar-track{height:7px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex;margin-top:5px}
+.share-seg{height:100%}
+.share-legend{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.sl-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+.sl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* SVG trend line */
+.trend-svg-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.tc-label{font-size:10px;color:var(--text3);margin-bottom:6px;font-weight:500}
+.trend-svg{width:100%;height:72px;display:block;overflow:visible}
+.trend-months{display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:var(--text3)}
+
+/* pain/pos list */
+.pain-list{display:flex;flex-direction:column;gap:5px}
+.pain-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;font-size:11px}
+.pi-pain{background:var(--red-lt);border:1px solid var(--red-bd)}
+.pi-pos{background:var(--green-lt);border:1px solid var(--green-bd)}
+.pi-neutral{background:var(--surface3);border:1px solid var(--border)}
+.pi-icon{font-size:13px;flex-shrink:0}
+.pi-text{flex:1;color:var(--text2);line-height:1.4}
+.pi-text strong{color:var(--text)}
+
+/* Scout 主控（全宽）*/
+.scout-master{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:visible;animation:fadeUp .4s ease;margin-bottom:0}
+.sm-head{padding:16px 20px 12px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:10px}
+.sm-agent-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:3px}
+.sm-head-title{font-size:16px;font-weight:700;flex:1}
+.sm-body{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.sm-row{display:grid;grid-template-columns:170px 1fr auto;gap:16px;align-items:center;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px}
+.sm-dim{font-size:13px;font-weight:700;color:var(--text);line-height:1.4}
+.sm-signal{font-size:12px;color:var(--text2);line-height:1.6}
+.verdict-chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:6px 14px;border-radius:100px;white-space:nowrap;border:1.5px solid}
+.vc-green{background:var(--green-lt);color:var(--green);border-color:var(--green-bd)}
+.vc-amber{background:var(--amber-lt);color:var(--amber);border-color:var(--amber-bd)}
+.vc-blue{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-bd)}
+
+/* insight box */
+.insight-box{background:var(--blue-lt);border:1px solid var(--blue-bd);border-radius:7px;padding:10px 12px;font-size:11px;color:var(--blue);line-height:1.65}
+
+/* ── Guard 合规报告新样式 ── */
+
+/* 顶部决策摘要 */
+.guard-verdict{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;animation:fadeUp .4s ease}
+.gv-light{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.gv-light.amber{background:var(--amber);box-shadow:0 0 0 4px var(--amber-bd)}
+.gv-light.green{background:var(--green);box-shadow:0 0 0 4px var(--green-bd)}
+.gv-light.red{background:var(--red);box-shadow:0 0 0 4px var(--red-bd)}
+.gv-status{font-size:20px;font-weight:800;letter-spacing:-.3px;flex:1}
+.gv-counters{display:flex;gap:12px}
+.gv-cnt{text-align:center;padding:8px 14px;border-radius:8px;border:1px solid var(--border)}
+.gvc-num{font-size:22px;font-weight:800;line-height:1}
+.gvc-label{font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap}
+.gv-eta{padding:10px 14px;background:var(--amber-lt);border:1px solid var(--amber-bd);border-radius:8px;text-align:center}
+.gv-eta-num{font-size:18px;font-weight:800;color:var(--amber)}
+.gv-eta-label{font-size:10px;color:var(--amber);margin-top:2px}
+
+/* 法规分层地图 */
+.reg-map{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:visible;animation:fadeUp .4s ease}
+.reg-layer{display:flex;gap:0}
+.reg-layer-label{width:90px;flex-shrink:0;padding:14px 12px;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;border-right:1px solid var(--border)}
+.rll-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:3px 6px;border-radius:4px;display:inline-block;width:fit-content}
+.rll-name{font-size:11px;font-weight:600;color:var(--text2);margin-top:2px}
+.rll-eu{background:var(--blue-lt);color:var(--blue)}
+.rll-it{background:var(--green-lt);color:var(--green)}
+.rll-de{background:var(--green-lt);color:var(--green)}
+.rll-fr{background:var(--purple-lt);color:var(--purple)}
+.rll-nl{background:var(--blue-lt);color:var(--blue)}
+.rll-es{background:var(--amber-lt);color:var(--amber)}
+.reg-layer-rules{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.reg-layer + .reg-layer{border-top:2px dashed var(--border)}
+.rule-card{padding:11px 13px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);display:flex;gap:12px;align-items:flex-start}
+.rule-sev{width:6px;border-radius:3px;flex-shrink:0;align-self:stretch;min-height:16px}
+.rs-must{background:var(--red)}
+.rs-high{background:var(--amber)}
+.rs-low{background:var(--blue-bd)}
+.rule-body{flex:1}
+.rule-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rule-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.rule-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.rb-fatal{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+.rb-must{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-bd)}
+.rb-suggest{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)}
+
+/* 认证时间轴 */
+.cert-timeline{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:visible;animation:fadeUp .4s ease}
+.ct-head{padding:14px 18px 10px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:8px}
+.ct-head-title{font-size:14px;font-weight:700;flex:1}
+.ct-body{padding:16px 18px}
+.ct-track{display:flex;flex-direction:column;gap:10px}
+.ct-item{display:flex;gap:12px;align-items:flex-start}
+.ct-week{width:42px;font-size:10px;font-weight:700;color:var(--text3);padding-top:2px;text-align:right;flex-shrink:0}
+.ct-line{display:flex;flex-direction:column;align-items:center;gap:0;flex-shrink:0}
+.ct-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ct-dot.red{background:var(--red)}
+.ct-dot.amber{background:var(--amber)}
+.ct-dot.green{background:var(--green)}
+.ct-dot.blue{background:var(--blue)}
+.ct-connector{width:2px;flex:1;background:var(--border);min-height:16px;margin:2px 0}
+.ct-content{flex:1;padding-bottom:6px}
+.ct-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ct-detail{font-size:11px;color:var(--text2);line-height:1.55}
+.ct-parallel{font-size:10px;color:var(--blue);font-weight:600;margin-top:2px}
+
+/* 执行清单 */
+.exec-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;animation:fadeUp .4s ease}
+.exec-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:visible}
+.ec-head{padding:12px 14px 8px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:13px;font-weight:700}
+.ec-body{padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.ec-item{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text2);line-height:1.5}
+.ec-bullet{width:18px;height:18px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px}
+.ecb-red{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+.ecb-amber{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-bd)}
+.ecb-blue{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)}
+
+/* listing */
+.listing-title{font-size:12px;font-weight:700;line-height:1.55;font-family:Georgia,serif;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:8px}
+.bullet-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.bullet-item{font-size:11px;color:var(--text2);line-height:1.6;padding:6px 10px;border-left:2px solid var(--purple-bd);background:var(--purple-lt);border-radius:0 5px 5px 0}
+.bullet-item strong{color:var(--text)}
+.culture-notes{display:flex;flex-direction:column;gap:4px}
+.cn-item{font-size:11px;color:var(--text2);padding:5px 9px;background:var(--amber-lt);border:1px solid var(--amber-bd);border-radius:5px;line-height:1.55}
+.compliance-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.ct-tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:100px;background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+
+/* confirm btn (scout → guard transition) */
+.confirm-btn-wrap{margin-top:4px;animation:fadeUp .3s ease}
+.confirm-btn{width:100%;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--blue-bd);background:var(--blue-lt);color:var(--blue);transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px}
+.confirm-btn:hover{background:var(--blue);color:white;border-color:var(--blue)}
+.confirm-btn:disabled{opacity:.45;pointer-events:none}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="logo">Joy<em>Ops</em> <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:6px">CrossBorder Ops Agent</span></div>
+  <div class="tb-right">
+    <span class="tb-pill tp-red">Demo</span>
+    <span class="tb-pill tp-blue">Scout</span>
+    <span class="tb-pill tp-green">Guard</span>
+    <span class="tb-pill tp-purple">Marketing</span>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="body">
+
+  <!-- LEFT: Chat -->
+  <div class="chat-panel">
+    <div class="chat-history" id="chatHistory">
+      <!-- initial message -->
+      <div class="bubble">
+        <div class="bubble-avatar av-agent">J</div>
+        <div class="bubble-body">
+          <div class="bubble-name">JoyOps Agent</div>
+          <div class="bubble-text">你好！我是 CrossBorder Ops Agent。<br><br>请先选择<strong>目标国家</strong>，然后告诉我你想分析的品类或者你观察到的电商市场信息——可以是具体品类（如"空气炸锅"），也可以是模糊描述（如"小家电"）。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <!-- Country selector -->
+      <div class="country-row" id="countryRow">
+        <button class="country-btn" data-country="de" onclick="selectCountry(this)">🇩🇪 德国</button>
+        <button class="country-btn" data-country="fr" onclick="selectCountry(this)">🇫🇷 法国</button>
+        <button class="country-btn" data-country="it" onclick="selectCountry(this)">🇮🇹 意大利</button>
+        <button class="country-btn" data-country="nl" onclick="selectCountry(this)">🇳🇱 荷兰</button>
+        <button class="country-btn" data-country="es" onclick="selectCountry(this)">🇪🇸 西班牙</button>
+      </div>
+      <!-- Text input -->
+      <div class="input-row">
+        <textarea class="chat-input" id="chatInput" placeholder="输入品类或描述，例如：空气炸锅 / 小家电 / 我想进入厨房用品市场…" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="handleSend()" title="发送">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Report -->
+  <div class="report-panel">
+    <div class="report-header">
+      <div class="rh-title" id="reportTitle">分析报告</div>
+      <div class="rh-badge rhb-waiting" id="reportBadge">等待输入</div>
+    </div>
+    <div class="report-body" id="reportBody">
+      <div class="report-empty">
+        <div class="re-icon">📊</div>
+        <div class="re-title">报告将在这里展示</div>
+        <div class="re-sub">在左侧输入品类和目标国家，Agent 分析完成后，完整报告会显示在这里</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /body -->
+</div><!-- /app -->
+
+<script>
+(function(){
+
+/* ══ State ══ */
+var state = {
+  country: null,
+  countryName: null,
+  stage: 'input',      // input | clarify | scout_running | scout_done | guard_running | guard_done | hitl | marketing_running | done
+  selectedSubcat: null,
+  inputLocked: false,
+  timers: []
+};
+
+var SUBCATS = {
+  '小家电': [
+    {id:'airfryer', label:'🍳 空气炸锅', hint:'月搜索量 24.6万，趋势上升'},
+    {id:'coffee',   label:'☕ 咖啡机',   hint:'月搜索量 18.2万，成熟市场'},
+    {id:'blender',  label:'🥤 破壁料理机', hint:'月搜索量 9.8万，新兴上升'},
+    {id:'projector',label:'📽 迷你投影仪', hint:'月搜索量 7.1万，快速增长'},
+  ],
+  '厨房用品': [
+    {id:'airfryer',  label:'🍳 空气炸锅',   hint:'月搜索量 24.6万，最热品类'},
+    {id:'cookware',  label:'🍲 不粘锅套装', hint:'月搜索量 15.3万，稳定'},
+    {id:'knife',     label:'🔪 厨师刀套装', hint:'月搜索量 11.2万，高客单价'},
+  ]
+};
+
+var COUNTRIES = {de:'德国',fr:'法国',it:'意大利',nl:'荷兰',es:'西班牙'};
+var COUNTRY_FLAGS = {de:'🇩🇪',fr:'🇫🇷',it:'🇮🇹',nl:'🇳🇱',es:'🇪🇸'};
+
+/* ══ Country select ══ */
+window.selectCountry = function(btn) {
+  document.querySelectorAll('.country-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  state.country = btn.dataset.country;
+  state.countryName = COUNTRIES[state.country];
+};
+
+/* ══ Input helpers ══ */
+window.autoResize = function(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+};
+window.handleKey = function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+};
+
+/* ══ Send ══ */
+window.handleSend = function() {
+  if (state.inputLocked) return;
+  var input = document.getElementById('chatInput');
+  var text = input.value.trim();
+  if (!text) return;
+  if (!state.country) { flashCountry(); return; }
+
+  input.value = ''; input.style.height = 'auto';
+  lockInput();
+  addUserBubble(text);
+  processInput(text);
+};
+
+function flashCountry() {
+  var row = document.getElementById('countryRow');
+  row.style.outline = '2px solid var(--red)';
+  row.style.borderRadius = '6px';
+  setTimeout(function(){ row.style.outline = ''; }, 1200);
+  addAgentBubble('请先选择目标国家 👆', 'normal');
+}
+
+/* ══ Chat helpers ══ */
+function addUserBubble(text) {
+  var h = document.getElementById('chatHistory');
+  var div = document.createElement('div');
+  div.className = 'bubble user';
+  div.innerHTML = '<div class="bubble-body"><div class="bubble-name">你</div><div class="bubble-text">' + escHtml(text) + '</div></div>';
+  h.appendChild(div);
+  scrollChat();
+}
+
+function addAgentBubble(html, type, id) {
+  var h = document.getElementById('chatHistory');
+  var div = document.createElement('div');
+  div.className = 'bubble';
+  if (id) div.id = id;
+  var cls = type === 'thinking' ? 'agent-thinking' : type === 'system' ? 'system-msg' : '';
+  var av = type === 'system' ? 'av-system' : 'av-agent';
+  var name = type === 'system' ? 'System' : 'JoyOps Agent';
+  div.innerHTML = '<div class="bubble-avatar ' + av + '">' + (type==='system'?'⚙':'J') + '</div><div class="bubble-body"><div class="bubble-name">' + name + '</div><div class="bubble-text ' + cls + '">' + html + '</div></div>';
+  h.appendChild(div);
+  scrollChat();
+  return div;
+}
+
+function addToolCall(toolName, status) {
+  var h = document.getElementById('chatHistory');
+  var div = document.createElement('div');
+  div.className = 'tool-call';
+  div.innerHTML = '<span class="tc-icon">🔧</span><span class="tc-tag">' + toolName + '</span><span class="tc-status ' + (status==='ok'?'ok':'spin') + '">' + (status==='ok'?'✓ 完成':'执行中…') + '</span>';
+  h.appendChild(div);
+  scrollChat();
+  return div;
+}
+
+function addChips(items, onSelect) {
+  var h = document.getElementById('chatHistory');
+  var wrap = document.createElement('div');
+  wrap.className = 'chip-group';
+  items.forEach(function(item) {
+    var btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.textContent = item.label;
+    btn.onclick = function() {
+      wrap.querySelectorAll('.chip').forEach(function(c){ c.classList.add('disabled'); });
+      btn.classList.add('selected');
+      onSelect(item);
+    };
+    wrap.appendChild(btn);
+  });
+  h.appendChild(wrap);
+  scrollChat();
+}
+
+function addHitlBtns(onChoice) {
+  var h = document.getElementById('chatHistory');
+  var wrap = document.createElement('div');
+  wrap.className = 'hitl-btns';
+  var opts = [
+    {cls:'hb-go',    val:'continue', text:'✓ 风险可接受，继续执行 Marketing'},
+    {cls:'hb-noted', val:'noted',    text:'⚠ 知悉风险，继续并接收合规约束'},
+    {cls:'hb-stop',  val:'stop',     text:'✕ 风险过高，退出本次分析'},
+  ];
+  opts.forEach(function(o) {
+    var btn = document.createElement('button');
+    btn.className = 'hitl-btn ' + o.cls;
+    btn.innerHTML = o.text;
+    btn.onclick = function() {
+      wrap.querySelectorAll('.hitl-btn').forEach(function(b){ b.disabled=true; b.style.opacity='.5'; });
+      onChoice(o.val);
+    };
+    wrap.appendChild(btn);
+  });
+  h.appendChild(wrap);
+  scrollChat();
+}
+
+function addConfirmBtn(label, onConfirm) {
+  var h = document.getElementById('chatHistory');
+  var wrap = document.createElement('div');
+  wrap.className = 'confirm-btn-wrap';
+  // 继续按钮
+  var btn = document.createElement('button');
+  btn.className = 'confirm-btn';
+  btn.innerHTML = label;
+  btn.onclick = function() {
+    btn.disabled = true; exitBtn.disabled = true;
+    btn.style.opacity = '.5'; exitBtn.style.opacity = '.5';
+    onConfirm();
+  };
+  // 退出按钮
+  var exitBtn = document.createElement('button');
+  exitBtn.className = 'confirm-btn';
+  exitBtn.style.cssText = 'border-color:var(--red-bd);background:var(--red-lt);color:var(--red);margin-top:5px';
+  exitBtn.innerHTML = '✕ 不继续了，退出本次分析';
+  exitBtn.onclick = function() {
+    btn.disabled = true; exitBtn.disabled = true;
+    btn.style.opacity = '.5'; exitBtn.style.opacity = '.5';
+    doExit();
+  };
+  wrap.appendChild(btn);
+  wrap.appendChild(exitBtn);
+  h.appendChild(wrap);
+  scrollChat();
+}
+
+function doExit() {
+  state.timers.forEach(function(t){ clearTimeout(t); });
+  state.timers = [];
+  state.stage = 'input';
+  state.selectedSubcat = null;
+  addAgentBubble('已退出本次分析。你可以重新选择国家和品类开始新一轮分析 👇', 'system');
+  setReportHeader('分析报告', '等待输入', 'rhb-waiting');
+  document.querySelectorAll('.country-btn').forEach(function(b){ b.disabled = false; b.style.opacity = ''; });
+  unlockInput();
+}
+
+function scrollChat() {
+  var h = document.getElementById('chatHistory');
+  setTimeout(function(){ h.scrollTop = h.scrollHeight; }, 50);
+}
+
+function lockInput() {
+  state.inputLocked = true;
+  document.getElementById('chatInput').disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+}
+function unlockInput() {
+  state.inputLocked = false;
+  document.getElementById('chatInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('chatInput').focus();
+}
+
+function escHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function delay(ms, fn) {
+  var t = setTimeout(fn, ms);
+  state.timers.push(t);
+  return t;
+}
+
+/* ══ Report panel helpers ══ */
+function setReportHeader(title, badgeText, badgeCls) {
+  document.getElementById('reportTitle').textContent = title;
+  var b = document.getElementById('reportBadge');
+  b.textContent = badgeText;
+  b.className = 'rh-badge ' + badgeCls;
+}
+
+function clearReport() {
+  document.getElementById('reportBody').innerHTML = '';
+}
+
+function addReportSection(html) {
+  var body = document.getElementById('reportBody');
+  // clear empty state
+  var empty = body.querySelector('.report-empty');
+  if (empty) empty.remove();
+  var div = document.createElement('div');
+  div.innerHTML = html;
+  body.appendChild(div.firstChild || div);
+  body.scrollTop = body.scrollHeight;
+}
+
+/* ══ Input processing ══ */
+function processInput(text) {
+  var lower = text.toLowerCase();
+  // detect vague input
+  var vague = isVague(lower);
+
+  if (vague) {
+    runClarify(text, vague);
+  } else {
+    // treat as specific category
+    state.selectedSubcat = { id: 'airfryer', label: text };
+    runScout();
+  }
+}
+
+function isVague(text) {
+  // 模糊词 → 澄清品类的 key
+  var vagueMap = [
+    {key:'小家电',   match:['小家电','小电器','家用电器','电器','家电','电子产品','电子']},
+    {key:'厨房用品', match:['厨房用品','厨具','厨房']},
+    {key:'小家电',   match:['食品','美妆','服装','户外','运动']},
+  ];
+  for (var i=0; i<vagueMap.length; i++) {
+    var entry = vagueMap[i];
+    for (var j=0; j<entry.match.length; j++) {
+      if (text.indexOf(entry.match[j]) !== -1) return entry.key;
+    }
+  }
+  return null;
+}
+
+/* ══ Stage 0: Clarify ══ */
+function runClarify(text, category) {
+  state.stage = 'clarify';
+  setReportHeader('Router Agent · 品类解析', '分析中', 'rhb-running');
+
+  delay(600, function() {
+    addAgentBubble('收到，正在解析品类…', 'thinking');
+  });
+  delay(1400, function() {
+    var tc = addToolCall('category_parser', 'spin');
+    delay(900, function() {
+      tc.querySelector('.tc-status').textContent = '✓ 完成';
+      tc.querySelector('.tc-status').className = 'tc-status ok';
+    });
+  });
+  delay(2600, function() {
+    var subcats = SUBCATS[category] || SUBCATS['小家电'];
+    addAgentBubble('「' + escHtml(text) + '」属于较宽泛的品类。我识别出以下几个在<strong>' + COUNTRY_FLAGS[state.country] + ' ' + state.countryName + '</strong>市场热度较高的细分方向，请选择您想深入分析的品类：', 'normal');
+    addChips(subcats, function(item) {
+      state.selectedSubcat = item;
+      addUserBubble(item.label.replace(/^[^\s]+\s/,''));
+      delay(400, function() { runScout(); });
+    });
+    setReportHeader('Router Agent · 品类解析', '等待选择', 'rhb-waiting');
+    unlockInput();
+    // show clarify info in report
+    showClarifyReport(category, subcats);
+  });
+}
+
+function showClarifyReport(category, subcats) {
+  clearReport();
+  setReportHeader('Router Agent · 品类拆分', '等待选择', 'rhb-waiting');
+  var html = '<div class="r-section">' +
+    '<div class="rs-head"><span class="rs-tag rst-blue">Router</span><h3>品类拆分结果 · ' + escHtml(category) + ' × ' + state.countryName + '</h3></div>' +
+    '<div class="rs-body">' +
+    '<div style="font-size:11px;color:var(--text2);margin-bottom:10px">Agent 判断输入品类过于宽泛，自动拆分为以下细分方向供选择：</div>' +
+    '<div style="display:flex;flex-direction:column;gap:6px">';
+  subcats.forEach(function(s) {
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px">' +
+      '<span style="font-size:14px">' + s.label.split(' ')[0] + '</span>' +
+      '<div><div style="font-size:12px;font-weight:600">' + s.label.replace(/^[^\s]+\s/,'') + '</div>' +
+      '<div style="font-size:11px;color:var(--text3)">' + escHtml(s.hint) + '</div></div>' +
+      '</div>';
+  });
+  html += '</div></div></div>';
+  addReportSection(html);
+}
+
+/* ══ Stage 1: Scout ══ */
+function runScout() {
+  state.stage = 'scout_running';
+  lockInput();
+  var catLabel = state.selectedSubcat ? state.selectedSubcat.label.replace(/^[^\s]+\s/,'') : '空气炸锅';
+  var co = state.countryName;
+
+  setReportHeader('Scout Agent · 选品调研', '分析中…', 'rhb-running');
+  clearReport();
+
+  delay(300, function() {
+    addAgentBubble('好的，开始对<strong>「' + escHtml(catLabel) + '」×『' + co + '』</strong>进行深度选品调研。启动 3 个子 Agent 并行采集数据…', 'normal');
+  });
+
+  // tool calls sequence
+  var tools = [
+    {name:'amazon_search', t:500},
+    {name:'amazon_product_detail ×5', t:1300},
+    {name:'ebay_search', t:2000},
+    {name:'instagram_hashtag', t:2400},
+    {name:'tiktok_trend', t:3100},
+    {name:'reddit_search', t:3600},
+    {name:'google_trends', t:4200},
+    {name:'keyword_planner', t:4700},
+  ];
+  tools.forEach(function(tool) {
+    delay(tool.t, function() {
+      var tc = addToolCall(tool.name, 'spin');
+      delay(600, function() {
+        tc.querySelector('.tc-status').textContent = '✓ 完成';
+        tc.querySelector('.tc-status').className = 'tc-status ok';
+      });
+    });
+  });
+
+  delay(5500, function() {
+    addAgentBubble('数据采集完成，Scout 主控正在进行<strong>交叉判断</strong>（需求-竞争比 / 趋势-声量一致性 / 痛点-差异化空间）…', 'thinking');
+  });
+
+  delay(7000, function() {
+    addAgentBubble('选品报告已生成，机会评分 <strong>7.5 / 10</strong>，建议进入。详细报告已显示在右侧，请查阅。', 'normal');
+    showScoutReport(catLabel, co);
+    state.stage = 'scout_done';
+    setReportHeader('Scout 选品报告 · ' + catLabel + ' × ' + co, '分析完成 · 待确认', 'rhb-done');
+
+    delay(500, function() {
+      addAgentBubble('📋 请在右侧查看完整选品报告。确认后点击下方按钮继续合规审查。', 'normal');
+      addConfirmBtn('⚖️ 报告已看完，继续合规审查 →', function() {
+        runGuard(catLabel, co);
+      });
+    });
+  });
+}
+
+function makeSvgLine(values) {
+  var W = 300, H = 60;
+  var mn = Math.min.apply(null, values), mx = Math.max.apply(null, values);
+  var range = mx - mn || 1;
+  var pts = values.map(function(v, i) {
+    var x = (i / (values.length - 1)) * W;
+    var y = H - ((v - mn) / range) * (H - 8) - 4;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  var polyline = pts.join(' ');
+  // area fill path
+  var areaPath = 'M' + pts[0] + ' L' + pts.join(' L') +
+    ' L' + (W) + ',' + H + ' L0,' + H + ' Z';
+  return '<svg class="trend-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+    '<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="#2563EB" stop-opacity=".18"/>' +
+    '<stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>' +
+    '</linearGradient></defs>' +
+    '<path d="' + areaPath + '" fill="url(#tg)"/>' +
+    '<polyline points="' + polyline + '" fill="none" stroke="#2563EB" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+function showScoutReport(cat, co) {
+  clearReport();
+  var sd = SCOUT_DATA[state.country] || SCOUT_DATA['de'];
+  var ec = sd.ecom;
+  var tr = sd.trend;
+  var so = sd.social;
+  var ms = sd.master;
+
+  // ── 总体评分 header ──
+  var scoreHtml = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;animation:fadeUp .4s ease">' +
+    '<div style="padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:14px">' +
+      '<div style="display:flex;align-items:baseline;gap:4px">' +
+        '<span style="font-size:40px;font-weight:800;color:var(--green);letter-spacing:-2px;line-height:1">7.5</span>' +
+        '<span style="font-size:14px;color:var(--text3);font-weight:500">/ 10</span>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--green)">推荐进入</div>' +
+        '<div style="font-size:11px;color:var(--text2);margin-top:2px">综合机会评分 · Scout Agent 输出 · ' + sd.countryName + '</div>' +
+      '</div>' +
+      '<div style="margin-left:auto;display:flex;gap:6px">' +
+        '<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)">✓ 真实增长需求</span>' +
+        '<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)">有差异化空间</span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+  addReportSection(scoreHtml);
+
+  // ── 三列子 Agent ──
+  var trendValues = [28,31,29,34,38,35,40,42,39,44,48,52,55,51,57,60,58,63,65,62,68,72,70,75];
+  var svgHtml = makeSvgLine(trendValues);
+
+  // 竞争密度 bars
+  var catBarsHtml = ec.catBars.map(function(b, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;font-size:10px">' +
+      '<div style="width:50px;color:' + ec.catBarsTextColor[i] + ';flex-shrink:0">' + b.label + '</div>' +
+      '<div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">' +
+        '<div style="width:' + b.w + ';height:100%;background:' + b.color + ';border-radius:3px"></div>' +
+      '</div>' +
+      '<div style="color:' + ec.catBarsTextColor[i] + ';font-weight:700;width:28px">' + b.val + '</div>' +
+    '</div>';
+  }).join('');
+
+  // CR3 stacked bar
+  var cr3BarHtml = ec.cr3Segs.map(function(s) {
+    return '<div class="share-seg" style="background:' + s.color + ';width:' + s.w + '"></div>';
+  }).join('');
+  var cr3LegHtml = ec.cr3Legend.map(function(l, i) {
+    return '<div class="sl-item"><div class="sl-dot" style="background:' + ec.cr3Colors[i] + '"></div>' + l + '</div>';
+  }).join('');
+
+  // 品类搜索量排名 bars
+  var catSearchBars = tr.catItems.map(function(ci) {
+    var txtColor = ci.highlight ? 'color:var(--green);font-weight:700' : 'color:var(--text3)';
+    var barBorder = (!ci.highlight && ci.color === 'var(--surface3)') ? ';border:1px solid var(--border2)' : '';
+    return '<div style="display:flex;align-items:center;gap:6px;font-size:10px">' +
+      '<div style="width:58px;' + txtColor + ';flex-shrink:0">' + ci.label + '</div>' +
+      '<div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">' +
+        '<div style="width:' + ci.w + ';height:100%;background:' + ci.color + ';border-radius:3px' + barBorder + '"></div>' +
+      '</div>' +
+      '<div style="' + txtColor + ';width:36px">' + ci.val + '</div>' +
+    '</div>';
+  }).join('');
+
+  // 社交痛点列表
+  var painListHtml = so.pains.map(function(p) {
+    var parts = p.split(' — ');
+    return '<div class="pain-item pi-pain"><span class="pi-icon">😤</span><div class="pi-text"><strong>' + parts[0] + '</strong>' + (parts[1] ? ' — ' + parts[1] : '') + '</div></div>';
+  }).join('') + so.pos.map(function(p) {
+    var parts = p.split(' — ');
+    return '<div class="pain-item pi-pos"><span class="pi-icon">✅</span><div class="pi-text"><strong>' + parts[0] + '</strong>' + (parts[1] ? ' — ' + parts[1] : '') + '</div></div>';
+  }).join('');
+
+  var colsHtml = '<div class="scout-grid">' +
+
+    // 列1：电商数据子 Agent
+    '<div class="scout-col">' +
+      '<div class="sc-head">' +
+        '<div class="sc-agent-label">Sub-Agent 1 · 电商平台</div>' +
+        '<div class="sc-agent-name">电商数据 Agent</div>' +
+        '<div class="sc-agent-src">' + sd.platform + '</div>' +
+      '</div>' +
+      '<div class="sc-body">' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">竞争密度（SKU / 万次搜索）</div>' +
+          '<div class="mr-value ' + ec.densityColor + '">' + ec.density + '</div>' +
+          '<div class="mr-sub">' + ec.densitySub + '</div>' +
+          '<div style="margin-top:7px;font-size:10px;color:var(--text3);font-weight:600;margin-bottom:3px">' + ec.catLabel + '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:3px">' + catBarsHtml + '</div>' +
+          '<div style="margin-top:7px;font-size:10px;color:var(--' + (ec.densityColor === 'green' ? 'green' : 'amber') + ');font-weight:600">' + ec.densityNote + '</div>' +
+        '</div>' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">头部集中度 CR3</div>' +
+          '<div class="mr-value ' + ec.cr3Color + '">' + ec.cr3 + '</div>' +
+          '<div class="mr-sub">' + ec.cr3Sub + '</div>' +
+          '<div class="share-bar-track">' + cr3BarHtml + '</div>' +
+          '<div class="share-legend">' + cr3LegHtml + '</div>' +
+        '</div>' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">主流价格带（新品切入区）</div>' +
+          '<div class="mr-value">' + ec.priceBand + '</div>' +
+          '<div class="mr-sub">' + ec.priceSub + '</div>' +
+        '</div>' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">平均好评率（TOP 20）</div>' +
+          '<div class="mr-value green">' + ec.rating + '</div>' +
+          '<div class="mr-sub">' + ec.ratingSub + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    // 列2：搜索趋势子 Agent
+    '<div class="scout-col">' +
+      '<div class="sc-head">' +
+        '<div class="sc-agent-label">Sub-Agent 2 · 搜索数据</div>' +
+        '<div class="sc-agent-name">搜索趋势 Agent</div>' +
+        '<div class="sc-agent-src">Google Trends · Keyword Planner</div>' +
+      '</div>' +
+      '<div class="sc-body">' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">月均搜索量 · 品类排名</div>' +
+          '<div class="mr-value green">' + tr.rank + '</div>' +
+          '<div class="mr-sub">' + tr.rankSub + '</div>' +
+          '<div style="margin-top:7px;font-size:10px;color:var(--text3);font-weight:600;margin-bottom:3px">' + tr.catLabel + '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:3px">' + catSearchBars + '</div>' +
+          '<div style="margin-top:7px;font-size:10px;color:var(--green);font-weight:600">' + tr.trendNote + '</div>' +
+        '</div>' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">24 个月趋势增幅</div>' +
+          '<div class="mr-value green">' + tr.trendGrow + '</div>' +
+          '<div class="mr-sub">' + tr.trendGrowSub + '</div>' +
+        '</div>' +
+        '<div class="trend-svg-wrap">' +
+          '<div class="tc-label">搜索量走势（24 个月）</div>' +
+          svgHtml +
+          '<div class="trend-months"><span>2023.7</span><span>2024.1</span><span>2024.7</span><span>2025.1</span><span>2025.7</span></div>' +
+        '</div>' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">季节性峰值</div>' +
+          '<div class="mr-value amber">' + tr.peakMonth + '</div>' +
+          '<div class="mr-sub">' + tr.peakSub + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    // 列3：社交声量子 Agent
+    '<div class="scout-col">' +
+      '<div class="sc-head">' +
+        '<div class="sc-agent-label">Sub-Agent 3 · 社交平台</div>' +
+        '<div class="sc-agent-name">社交声量 Agent</div>' +
+        '<div class="sc-agent-src">TikTok · Instagram · Reddit</div>' +
+      '</div>' +
+      '<div class="sc-body">' +
+        '<div class="metric-row">' +
+          '<div class="mr-label">话题总曝光（近 30 天）</div>' +
+          '<div class="mr-value blue">' + so.exposure + '</div>' +
+          '<div class="mr-sub">' + so.exposureSub + '</div>' +
+        '</div>' +
+        '<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">用户高频讨论 · 痛点 vs 正向</div>' +
+        '<div class="pain-list">' + painListHtml + '</div>' +
+        '<div class="metric-row" style="margin-top:2px">' +
+          '<div class="mr-label">爆款内容类型</div>' +
+          '<div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.6">' + so.viralType + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+  '</div>';
+  addReportSection(colsHtml);
+
+  // ── Scout 主控：交叉判断（全宽）──
+  var verdictRows = ms.verdicts.map(function(v) {
+    return '<div class="sm-row">' +
+      '<div class="sm-dim">' + v.dim + '</div>' +
+      '<div class="sm-signal">' + v.signal + '</div>' +
+      '<div><span class="verdict-chip ' + v.cls + '">' + v.chip + '</span></div>' +
+    '</div>';
+  }).join('');
+
+  var skuPriority = ms.sku.priority;
+  var skuSub = ms.sku.sub;
+  var skuAvoid = ms.sku.avoid;
+
+  function makePriTag(tag, color) {
+    return '<span style="font-size:11px;padding:3px 10px;border-radius:100px;background:white;border:1px solid var(--' + color + '-bd);color:var(--' + color + ');font-weight:600">' + tag + '</span>';
+  }
+
+  var masterHtml = '<div class="scout-master">' +
+    '<div class="sm-head">' +
+      '<div>' +
+        '<div class="sm-agent-label">Scout 主控 · ' + sd.countryName + '</div>' +
+        '<div class="sm-head-title">交叉判断 · 机会综合研判</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="sm-body">' +
+      verdictRows +
+      '<div style="margin-top:4px;background:var(--blue-lt);border:1px solid var(--blue-bd);border-radius:7px;padding:11px 14px;font-size:11px;color:var(--blue);line-height:1.7">' +
+        '💡 <strong>Agent 推断：</strong>' + ms.insight +
+      '</div>' +
+
+      '<div style="margin-top:16px;border-top:1.5px dashed var(--border2);padding-top:16px">' +
+        '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px">📦 SKU 选品方向建议 <span style="font-size:10px;font-weight:500;color:var(--text3);background:var(--surface3);padding:2px 8px;border-radius:4px;border:1px solid var(--border)">基于数据交叉判断 · ' + sd.countryName + '</span></div>' +
+        '<div style="display:flex;flex-direction:column;gap:10px">' +
+
+          '<div style="display:flex;gap:14px;padding:14px 16px;background:var(--green-lt);border:1.5px solid var(--green-bd);border-radius:10px;align-items:flex-start">' +
+            '<div style="flex-shrink:0;width:46px;height:46px;border-radius:9px;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:22px">✅</div>' +
+            '<div style="flex:1">' +
+              '<div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">' + skuPriority.title + '</div>' +
+              '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:8px">' + skuPriority.desc + '</div>' +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap">' + skuPriority.tags.map(function(t){return makePriTag(t,'green');}).join('') + '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:flex;gap:14px;padding:14px 16px;background:var(--amber-lt);border:1.5px solid var(--amber-bd);border-radius:10px;align-items:flex-start">' +
+            '<div style="flex-shrink:0;width:46px;height:46px;border-radius:9px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:22px">⚡</div>' +
+            '<div style="flex:1">' +
+              '<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:4px">' + skuSub.title + '</div>' +
+              '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:8px">' + skuSub.desc + '</div>' +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap">' + skuSub.tags.map(function(t){return makePriTag(t,'amber');}).join('') + '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:flex;gap:14px;padding:14px 16px;background:var(--red-lt);border:1.5px solid var(--red-bd);border-radius:10px;align-items:flex-start">' +
+            '<div style="flex-shrink:0;width:46px;height:46px;border-radius:9px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px">🚫</div>' +
+            '<div style="flex:1">' +
+              '<div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px">' + skuAvoid.title + '</div>' +
+              '<div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:8px">' + skuAvoid.desc + '</div>' +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap">' + skuAvoid.tags.map(function(t){return makePriTag(t,'red');}).join('') + '</div>' +
+            '</div>' +
+          '</div>' +
+
+        '</div>' +
+      '</div>' +
+
+    '</div>' +
+  '</div>';
+  addReportSection(masterHtml);
+}
+
+/* ══ Stage 2: Guard ══ */
+function runGuard(cat, co) {
+  state.stage = 'guard_running';
+  setReportHeader('Guard Agent · 合规审查', '分析中…', 'rhb-running');
+
+  delay(200, function() {
+    addAgentBubble('启动 Guard Agent，正在推断「' + escHtml(cat) + '」的法规分类…', 'thinking');
+  });
+  delay(1000, function() {
+    addAgentBubble('自主推断法规分类：<strong>带电产品</strong> + <strong>食品接触材料</strong>（炸篮直接接触食物）。构建检索 query，向量检索法规知识库…', 'normal');
+  });
+
+  var gd = GUARD_DATA[state.country] || GUARD_DATA['de'];
+  var countryLayerName = gd.countryName + '国家层';
+  var mandatoryCount = gd.risk.mandatories;
+  var riskLevel = gd.risk.level;
+  var eta = gd.risk.eta;
+
+  var gTools = [
+    {name:'law_kb_search · 欧盟层', t:1800},
+    {name:'law_kb_search · ' + countryLayerName, t:2600},
+  ];
+  gTools.forEach(function(tool) {
+    delay(tool.t, function() {
+      var tc = addToolCall(tool.name, 'spin');
+      delay(700, function() {
+        tc.querySelector('.tc-status').textContent = '✓ 完成';
+        tc.querySelector('.tc-status').className = 'tc-status ok';
+      });
+    });
+  });
+
+  delay(3800, function() {
+    addAgentBubble('合规审查完成，匹配 ' + mandatoryCount + ' 条强制法规，无阻断项，综合评级：<strong>' + riskLevel + '风险</strong>。', 'normal');
+    showGuardReport(cat, co);
+    state.stage = 'guard_done';
+    setReportHeader('Guard 合规报告 · ' + cat + ' × ' + gd.countryName, '审查完成', 'rhb-done');
+
+    delay(500, function() {
+      addAgentBubble('⚠ <strong>需要您确认</strong>：合规审查发现 ' + mandatoryCount + ' 项强制认证要求，预计认证周期 ' + eta + '。请选择下一步操作：', 'normal');
+      addHitlBtns(function(choice) { handleHitl(choice, cat, co); });
+    });
+  });
+}
+
+/* ══ Scout 国家数据库 ══ */
+var SCOUT_DATA = {
+  de: {
+    countryName: '德国', platform: 'Amazon.de · eBay.de',
+    ecom: {
+      density: '10.0', densityColor: 'amber',
+      densitySub: '在售 2,470 SKU ÷ 月搜索 24.6万 = <strong>每万次搜索约 10 个竞品</strong>',
+      catLabel: '德国厨电品类基准对比',
+      catBars: [{label:'本品类',w:'28%',color:'var(--amber)',val:'10'},{label:'品类均值',w:'50%',color:'var(--border2)',val:'18'},{label:'红海阈值',w:'100%',color:'var(--red-bd)',val:'35+'}],
+      catBarsTextColor: ['var(--amber)','var(--text3)','var(--red)'],
+      densityNote: '✓ 低于品类均值，竞争密度相对温和',
+      cr3: '52%', cr3Color: 'amber',
+      cr3Sub: 'Philips 30% · Ninja 14% · Cosori 8%',
+      cr3Segs: [{color:'#2563EB',w:'30%'},{color:'#7C3AED',w:'14%'},{color:'#16A34A',w:'8%'},{color:'#E4E1DB',w:'48%'}],
+      cr3Legend: ['Philips 30%','Ninja 14%','Cosori 8%','其余 48%'],
+      cr3Colors: ['#2563EB','#7C3AED','#16A34A','#E4E1DB'],
+      priceBand: '€70–120', priceSub: '€70以下价格战激烈，€120+ 为品牌溢价区',
+      rating: '4.3 ★', ratingSub: '同类痛点差评集中在容量与清洁',
+    },
+    trend: {
+      rank: '#3', rankSub: '24.6 万/月，在德国厨电品类中排第 3',
+      catLabel: '德国厨电 Top 5 品类对比',
+      catItems: [
+        {label:'咖啡机', w:'100%', val:'88万', color:'var(--border2)', highlight:false},
+        {label:'洗碗机', w:'68%',  val:'60万', color:'var(--border2)', highlight:false},
+        {label:'空气炸锅 ▶', w:'28%', val:'24.6万', color:'var(--green)', highlight:true},
+        {label:'破壁机',  w:'18%', val:'16万',  color:'var(--surface3)', highlight:false},
+        {label:'料理棒',  w:'11%', val:'9.8万', color:'var(--surface3)', highlight:false},
+      ],
+      trendNote: '✓ 大盘需求真实，非小众细分',
+      trendGrow: '+35%', trendGrowSub: '持续上升，非阶段性爆款',
+      peakMonth: '12 月', peakSub: '圣诞节前搜索量 +40%，建议提前 3 个月备货',
+    },
+    social: {
+      exposure: '1.2 亿',
+      exposureSub: '#Heißluftfritteuse + #Airfryer 合计',
+      pains: ['容量太小 — 无法装下整鸡','清洁麻烦 — 炸篮不能入洗碗机','噪音大 — 深夜使用扰邻'],
+      pos:   ['无油健康 — 核心购买动机','省时快手 — 食谱视频驱动购买'],
+      viralType: '食谱类（2.3M 播放）· 烤箱 vs 空气炸锅对比评测',
+    },
+    master: {
+      verdicts: [
+        { dim:'需求 × 竞争比', signal:'搜索量高（24.6万/月）+ CR3仅52%，近半市场无品牌覆盖；头部痛点未解决，差评明显', chip:'⚠ 红海，有差异化窗口', cls:'vc-amber' },
+        { dim:'趋势 × 社交声量一致性', signal:'搜索量↑35%（24M）与社交话题量同步上升，非单平台炒作，属真实增长需求', chip:'✓ 真实增长需求', cls:'vc-green' },
+        { dim:'痛点 × 差异化空间', signal:'Reddit / TikTok 最高频痛点：容量小 + 清洁难 + 噪音 — 头部品牌 Philips / Ninja 均未系统解决', chip:'有明确切入点', cls:'vc-blue' },
+      ],
+      insight: '「大容量 + 可进洗碗机 + 低噪音」覆盖其中两项即可建立差异化卖点。建议切入 €70–€100 价格带，以食谱内容营销驱动自然流量，避开广告竞价红海。',
+      sku: {
+        priority: { title:'优先切入 · 大容量可洗碗机款（5.5L+）', desc:'最高频用户痛点，头部品牌 Philips / Ninja 均未系统解决。TOP 20 中该方向 SKU 不足 3 个，市场空白明确。炸篮独立可拆+可进洗碗机是核心卖点，结合 5.5L 大容量满足家庭聚餐场景。', tags:['价格带 €70–100','竞品空白区','炸篮可拆洗','3–4 人家庭'] },
+        sub:      { title:'次优方向 · 静音双层款（≤45dB + 双层炸篓）', desc:'噪音是 Reddit 第三高频痛点，但搜索量相对较小。双层炸篓可同时烹饪两种食材，客单价可做到 €110+，竞品少且差评分散，适合有供应链优势的卖家作为溢价款布局。', tags:['价格带 €100–130','利润率更高','差评少'] },
+        avoid:    { title:'建议回避 · 2L 以下小容量单功能款', desc:'该区间 CR3 超过 70%（Cosori 强势盘踞），广告 CPC 极高，新品冷启动成本极大。价格战已把利润压缩至极限，即便供应链有优势也难以获得足够利润空间。', tags:['CR3 > 70%','广告成本极高','利润极薄'] },
+      },
+    },
+  },
+  it: {
+    countryName: '意大利', platform: 'Amazon.it · eBay.it',
+    ecom: {
+      density: '8.5', densityColor: 'green',
+      densitySub: '在售 1,850 SKU ÷ 月搜索 21.8万 = <strong>每万次搜索约 8.5 个竞品</strong>',
+      catLabel: '意大利厨电品类基准对比',
+      catBars: [{label:'本品类',w:'24%',color:'var(--green)',val:'8.5'},{label:'品类均值',w:'50%',color:'var(--border2)',val:'17'},{label:'红海阈值',w:'100%',color:'var(--red-bd)',val:'35+'}],
+      catBarsTextColor: ['var(--green)','var(--text3)','var(--red)'],
+      densityNote: '✓ 明显低于品类均值，竞争窗口较好',
+      cr3: '55%', cr3Color: 'amber',
+      cr3Sub: 'Philips 32% · Tefal 14% · Moulinex 9%',
+      cr3Segs: [{color:'#2563EB',w:'32%'},{color:'#16A34A',w:'14%'},{color:'#D97706',w:'9%'},{color:'#E4E1DB',w:'45%'}],
+      cr3Legend: ['Philips 32%','Tefal 14%','Moulinex 9%','其余 45%'],
+      cr3Colors: ['#2563EB','#16A34A','#D97706','#E4E1DB'],
+      priceBand: '€60–110', priceSub: '€60以下红海，€110+ 为溢价区',
+      rating: '4.2 ★', ratingSub: '差评集中在清洁麻烦与操作复杂',
+    },
+    trend: {
+      rank: '#3', rankSub: '21.8 万/月，在意大利厨电品类中排第 3',
+      catLabel: '意大利厨电 Top 5 品类对比',
+      catItems: [
+        {label:'咖啡机', w:'100%', val:'72万', color:'var(--border2)', highlight:false},
+        {label:'洗碗机', w:'65%',  val:'47万', color:'var(--border2)', highlight:false},
+        {label:'空气炸锅 ▶', w:'30%', val:'21.8万', color:'var(--green)', highlight:true},
+        {label:'破壁机',  w:'18%', val:'13万',  color:'var(--surface3)', highlight:false},
+        {label:'烤面包机', w:'12%', val:'8.4万', color:'var(--surface3)', highlight:false},
+      ],
+      trendNote: '✓ 大盘需求真实，意大利饮食文化推动持续增长',
+      trendGrow: '+42%', trendGrowSub: '意大利市场增速超过德法，空间较大',
+      peakMonth: '12 月', peakSub: '圣诞礼品季搜索量 +48%，建议提前 3 个月备货',
+    },
+    social: {
+      exposure: '0.9 亿',
+      exposureSub: '#Friggitrice #AirFryer #CucinaLeggera 合计',
+      pains: ['清洁麻烦 — 炸篮涂层难以清洗','容量不够 — 无法一次做全家份','操作复杂 — 程序按键不直观'],
+      pos:   ['无油健康 — 地中海饮食理念结合','省时美食 — 传统食谱更快速实现'],
+      viralType: '意大利食谱视频（Arancini/Fritto Misto）驱动，家庭场景为主',
+    },
+    master: {
+      verdicts: [
+        { dim:'需求 × 竞争比', signal:'搜索量高（21.8万/月）+ CR3 55%，意大利本土品牌（Moulinex/Tefal）覆盖不足，中国品牌机会窗口明显', chip:'⚠ 中等竞争，有差异化空间', cls:'vc-amber' },
+        { dim:'趋势 × 社交声量一致性', signal:'搜索量↑42%（24M）增速领先德法，美食视频内容与搜索数据高度吻合，属真实增长', chip:'✓ 高速增长市场', cls:'vc-green' },
+        { dim:'痛点 × 差异化空间', signal:'Instagram / TikTok 最高频痛点：清洁麻烦 + 容量不足 + 操作复杂 — 本土品牌（Moulinex）均未系统解决', chip:'有明确切入点', cls:'vc-blue' },
+      ],
+      insight: '「可进洗碗机 + 大容量 + 意大利食谱预设」覆盖其中两项即可建立差异化。建议切入 €60–€90 价格带，结合意大利传统食谱内容（Arancini/Fritto Misto）驱动 Instagram 自然流量。',
+      sku: {
+        priority: { title:'优先切入 · 大容量可洗碗机款（5.5L+）', desc:'最高频用户痛点（清洁+容量），意大利家庭聚餐场景需求强烈。TOP 20 中炸篮可进洗碗机的 SKU 不足 4 个，市场空白清晰。配合意大利食谱预设程序能强化本地化差异。', tags:['价格带 €60–90','竞品空白区','炸篮可拆洗','4–6 人家庭'] },
+        sub:      { title:'次优方向 · 意大利食谱专属预设款', desc:'意大利消费者高度认同食材文化，内置 Arancini/Pizza/Focaccia 等本地食谱的产品评分明显更高。配合意大利语 App 操作，客单价可做到 €100+。', tags:['价格带 €90–120','溢价空间','文化认同强'] },
+        avoid:    { title:'建议回避 · 无本地化小容量款', desc:'3L 以下单功能款竞争激烈，且意大利消费者家庭规模较大（平均 3–4 人），小容量差评率高。无意大利语界面的产品退货率明显偏高。', tags:['容量 <3L','差评率高','无本地化'] },
+      },
+    },
+  },
+  fr: {
+    countryName: '法国', platform: 'Amazon.fr · Cdiscount',
+    ecom: {
+      density: '12.3', densityColor: 'amber',
+      densitySub: '在售 2,370 SKU ÷ 月搜索 19.2万 = <strong>每万次搜索约 12.3 个竞品</strong>',
+      catLabel: '法国厨电品类基准对比',
+      catBars: [{label:'本品类',w:'35%',color:'var(--amber)',val:'12.3'},{label:'品类均值',w:'50%',color:'var(--border2)',val:'17'},{label:'红海阈值',w:'100%',color:'var(--red-bd)',val:'35+'}],
+      catBarsTextColor: ['var(--amber)','var(--text3)','var(--red)'],
+      densityNote: '⚠ 略低于品类均值，竞争中等偏紧',
+      cr3: '60%', cr3Color: 'amber',
+      cr3Sub: 'Philips 34% · Moulinex 16% · Tefal 10%',
+      cr3Segs: [{color:'#2563EB',w:'34%'},{color:'#16A34A',w:'16%'},{color:'#D97706',w:'10%'},{color:'#E4E1DB',w:'40%'}],
+      cr3Legend: ['Philips 34%','Moulinex 16%','Tefal 10%','其余 40%'],
+      cr3Colors: ['#2563EB','#16A34A','#D97706','#E4E1DB'],
+      priceBand: '€70–120', priceSub: '€70以下价格战激烈，法国消费者溢价接受度高',
+      rating: '4.3 ★', ratingSub: '差评集中在法语说明书缺失与噪音问题',
+    },
+    trend: {
+      rank: '#4', rankSub: '19.2 万/月，在法国厨电品类中排第 4',
+      catLabel: '法国厨电 Top 5 品类对比',
+      catItems: [
+        {label:'咖啡机', w:'100%', val:'95万', color:'var(--border2)', highlight:false},
+        {label:'洗碗机', w:'60%',  val:'57万', color:'var(--border2)', highlight:false},
+        {label:'搅拌机', w:'35%',  val:'33万', color:'var(--border2)', highlight:false},
+        {label:'空气炸锅 ▶', w:'20%', val:'19.2万', color:'var(--green)', highlight:true},
+        {label:'破壁机',  w:'14%', val:'13.5万', color:'var(--surface3)', highlight:false},
+      ],
+      trendNote: '✓ 大盘需求真实，法国健康饮食趋势推动增长',
+      trendGrow: '+28%', trendGrowSub: '稳步上升，增速低于意大利但更稳定',
+      peakMonth: '12 月', peakSub: '节日季前搜索量 +35%，建议提前 3 个月备货',
+    },
+    social: {
+      exposure: '0.7 亿',
+      exposureSub: '#FriteuseArAir + #CuisineLight + #AirFryer 合计',
+      pains: ['说明书无法语 — 法国消费者高度敏感','噪音问题 — 公寓密集环境突出','清洁繁琐 — 特别是内胆涂层'],
+      pos:   ['健康轻食 — 符合法国饮食时尚','省时便利 — 工作日快手料理场景'],
+      viralType: '健康食谱视频（Poulet/Légumes）+ 生活方式博主带货为主',
+    },
+    master: {
+      verdicts: [
+        { dim:'需求 × 竞争比', signal:'搜索量 19.2万/月，CR3 达 60%（法国本土品牌 Moulinex/Tefal 占优），新进入者需本地化突破', chip:'⚠ 品牌集中度高，需本地化切入', cls:'vc-amber' },
+        { dim:'趋势 × 社交声量一致性', signal:'搜索量↑28%（24M）与健康饮食类社交内容同步增长，法国博主推荐形成稳定流量', chip:'✓ 稳健增长需求', cls:'vc-green' },
+        { dim:'痛点 × 差异化空间', signal:'Amazon 差评明显：说明书无法语 + 噪音 + 清洁 — Moulinex/Tefal 本土品牌也未系统解决噪音问题', chip:'有差异化切入点', cls:'vc-blue' },
+      ],
+      insight: '「全法语界面 + 低噪音 + 可进洗碗机」是法国市场最强差异化组合。建议切入 €70–€100 价格带，以精准克制的法语文案（非翻译腔）配合健康食谱内容，避免夸大表达触发 Darty/Amazon 评测风险。',
+      sku: {
+        priority: { title:'优先切入 · 低噪音大容量可洗碗机款', desc:'法国公寓密集，噪音投诉是 Amazon.fr 最高频一星差评原因，本土品牌（Moulinex）均未解决。≤42dB + 5.5L + 可进洗碗机组合覆盖三大痛点，TOP 20 中同时满足的 SKU 仅 2 个。', tags:['价格带 €75–100','噪音竞品空白','炸篮可拆洗','完整法语界面'] },
+        sub:      { title:'次优方向 · 健康食谱预设精致款', desc:'法国消费者对产品质感和精准性有高期望，内置经典法式菜谱（Poulet rôti / Légumes grillés）的产品溢价接受度高。客单价可做到 €110+，利润空间更好。', tags:['价格带 €100–130','高溢价接受度','法式食谱预设'] },
+        avoid:    { title:'建议回避 · 无法语界面功能基础款', desc:'法国消费者对外语界面容忍度极低，缺少法语说明书会被平台限制销售并积累一星差评。价格战区间（<€60）被 Moulinex 牢牢把控，新品突破成本极高。', tags:['无法语界面','<€60 红海','Moulinex 强势区'] },
+      },
+    },
+  },
+  nl: {
+    countryName: '荷兰', platform: 'Amazon.nl / bol.com',
+    ecom: {
+      density: '9.2', densityColor: 'green',
+      densitySub: '在售 1,510 SKU ÷ 月搜索 16.4万 = <strong>每万次搜索约 9.2 个竞品</strong>',
+      catLabel: '荷兰厨电品类基准对比',
+      catBars: [{label:'本品类',w:'26%',color:'var(--green)',val:'9.2'},{label:'品类均值',w:'50%',color:'var(--border2)',val:'18'},{label:'红海阈值',w:'100%',color:'var(--red-bd)',val:'35+'}],
+      catBarsTextColor: ['var(--green)','var(--text3)','var(--red)'],
+      densityNote: '✓ 低于品类均值，竞争压力相对较轻',
+      cr3: '50%', cr3Color: 'amber',
+      cr3Sub: 'Philips 28% · Ninja 13% · Cosori 9%',
+      cr3Segs: [{color:'#2563EB',w:'28%'},{color:'#7C3AED',w:'13%'},{color:'#16A34A',w:'9%'},{color:'#E4E1DB',w:'50%'}],
+      cr3Legend: ['Philips 28%','Ninja 13%','Cosori 9%','其余 50%'],
+      cr3Colors: ['#2563EB','#7C3AED','#16A34A','#E4E1DB'],
+      priceBand: '€60–110', priceSub: '荷兰消费者性价比敏感，€110+ 需强力背书',
+      rating: '4.2 ★', ratingSub: '差评集中在价格虚高与清洁困难',
+    },
+    trend: {
+      rank: '#4', rankSub: '16.4 万/月，在荷兰厨电品类中排第 4',
+      catLabel: '荷兰厨电 Top 5 品类对比',
+      catItems: [
+        {label:'咖啡机', w:'100%', val:'68万', color:'var(--border2)', highlight:false},
+        {label:'洗碗机', w:'55%',  val:'37万', color:'var(--border2)', highlight:false},
+        {label:'搅拌机', w:'30%',  val:'20万', color:'var(--border2)', highlight:false},
+        {label:'空气炸锅 ▶', w:'24%', val:'16.4万', color:'var(--green)', highlight:true},
+        {label:'破壁机',  w:'15%', val:'10.2万', color:'var(--surface3)', highlight:false},
+      ],
+      trendNote: '✓ 需求真实，Philips 大本营市场仍有后进者空间',
+      trendGrow: '+31%', trendGrowSub: '稳步增长，bol.com 平台带动明显',
+      peakMonth: '12 月', peakSub: 'Sinterklaas（12/5）+ 圣诞双节叠加，旺季需提前 2 个月备货',
+    },
+    social: {
+      exposure: '0.5 亿',
+      exposureSub: '#Heteluchtfriteuse + #Airfryer + #GezondEten 合计',
+      pains: ['性价比不满 — 觉得价格偏高','清洁繁琐 — 特别是炸篮涂层','噪音问题 — 荷兰消费者较敏感'],
+      pos:   ['无油健康 — 日常烹饪场景驱动','省电实用 — 荷兰高电价背景下关注'],
+      viralType: 'bol.com 评测视频 + 健康生活博主推荐，数据导向内容效果最佳',
+    },
+    master: {
+      verdicts: [
+        { dim:'需求 × 竞争比', signal:'搜索量 16.4万/月，CR3 仅 50%，市场半壁无品牌覆盖；但 Philips 是荷兰本土品牌，品牌忠诚度较高', chip:'⚠ 有差异化空间，需数据证明价值', cls:'vc-amber' },
+        { dim:'趋势 × 社交声量一致性', signal:'搜索量↑31%（24M）与荷兰健康饮食类内容同步增长，bol.com 平台流量贡献显著', chip:'✓ 真实增长需求', cls:'vc-green' },
+        { dim:'痛点 × 差异化空间', signal:'bol.com 差评关键词：价格虚高 + 清洁困难 + 噪音 — 即便 Philips 也未系统解决清洁与噪音问题', chip:'有具体切入点', cls:'vc-blue' },
+      ],
+      insight: '荷兰消费者务实，「规格透明 + 可进洗碗机 + 低噪音 + 合理定价」是强力卖点组合。建议切入 €60–€90 价格带，以具体参数（L数/dB/W/能效等级）说话，配合 bol.com 真实评价数量建立信任。',
+      sku: {
+        priority: { title:'优先切入 · 规格透明可洗碗机大容量款', desc:'荷兰消费者最信任具体数据，炸篮可进洗碗机 + 5L+ 大容量 + ≤45dB 的组合在 bol.com TOP 20 中几乎是空白。荷兰家庭平均规模小（2–3人），4L–5L 容量最受欢迎。', tags:['价格带 €60–90','bol.com 空白区','炸篮可拆洗','规格数据透明'] },
+        sub:      { title:'次优方向 · 节能高效精简款（能效A级）', desc:'荷兰电价欧洲最高之一，能效等级 A 是购买决策加分项。功能精简但参数精准（精确控温±1°C）能赢得务实型消费者，客单价可做到 €90–110。', tags:['价格带 €80–110','能效A级','精准控温'] },
+        avoid:    { title:'建议回避 · 营销溢价无参数支撑款', desc:'荷兰消费者对夸大营销高度反感，缺乏具体规格数据的产品会在 bol.com 积累大量差评。Philips 本土品牌盘踞 €100+ 高端区，新品突破需要明显的性价比优势。', tags:['无具体参数','>€110 溢价区','营销过度'] },
+      },
+    },
+  },
+  es: {
+    countryName: '西班牙', platform: 'Amazon.es · El Corte Inglés',
+    ecom: {
+      density: '7.8', densityColor: 'green',
+      densitySub: '在售 1,440 SKU ÷ 月搜索 18.4万 = <strong>每万次搜索约 7.8 个竞品</strong>',
+      catLabel: '西班牙厨电品类基准对比',
+      catBars: [{label:'本品类',w:'22%',color:'var(--green)',val:'7.8'},{label:'品类均值',w:'50%',color:'var(--border2)',val:'18'},{label:'红海阈值',w:'100%',color:'var(--red-bd)',val:'35+'}],
+      catBarsTextColor: ['var(--green)','var(--text3)','var(--red)'],
+      densityNote: '✓ 显著低于品类均值，进入壁垒较低',
+      cr3: '48%', cr3Color: 'green',
+      cr3Sub: 'Philips 26% · Cecotec 14% · Cosori 8%',
+      cr3Segs: [{color:'#2563EB',w:'26%'},{color:'#DC2626',w:'14%'},{color:'#16A34A',w:'8%'},{color:'#E4E1DB',w:'52%'}],
+      cr3Legend: ['Philips 26%','Cecotec 14%','Cosori 8%','其余 52%'],
+      cr3Colors: ['#2563EB','#DC2626','#16A34A','#E4E1DB'],
+      priceBand: '€50–100', priceSub: '西班牙价格敏感，€50–70 为大众区，€100+ 需品牌支撑',
+      rating: '4.1 ★', ratingSub: '差评集中在耐用性不足与涂层脱落',
+    },
+    trend: {
+      rank: '#3', rankSub: '18.4 万/月，在西班牙厨电品类中排第 3',
+      catLabel: '西班牙厨电 Top 5 品类对比',
+      catItems: [
+        {label:'咖啡机', w:'100%', val:'85万', color:'var(--border2)', highlight:false},
+        {label:'洗碗机', w:'52%',  val:'44万', color:'var(--border2)', highlight:false},
+        {label:'空气炸锅 ▶', w:'22%', val:'18.4万', color:'var(--green)', highlight:true},
+        {label:'搅拌机',  w:'18%', val:'15.3万', color:'var(--surface3)', highlight:false},
+        {label:'破壁机',  w:'11%', val:'9.2万',  color:'var(--surface3)', highlight:false},
+      ],
+      trendNote: '✓ 增速最快的欧洲市场之一，渗透率仍在快速扩张',
+      trendGrow: '+53%', trendGrowSub: '西班牙增速领先欧洲五国，市场尚未饱和',
+      peakMonth: '1 月', peakSub: 'Reyes Magos（三王节 1/6）是西班牙最大礼品节，备货需提前 3 个月',
+    },
+    social: {
+      exposure: '0.8 亿',
+      exposureSub: '#FritadoraDeAire + #Airfryer + #CocinasSaludable 合计',
+      pains: ['涂层脱落 — 耐用性是一星差评主因','容量不足 — 西班牙家庭规模较大','操作不直观 — 西班牙语界面缺失'],
+      pos:   ['无油健康 — 地中海饮食结合卖点强','快速美食 — Tapas/Empanadas 等本地食谱'],
+      viralType: '西班牙食谱 TikTok（Croquetas/Patatas Bravas）传播极快，家庭场景共鸣强',
+    },
+    master: {
+      verdicts: [
+        { dim:'需求 × 竞争比', signal:'搜索量 18.4万/月，CR3 仅 48%，本土品牌 Cecotec 性价比强但质量口碑差，为高品质替代品留出窗口', chip:'✓ 竞争密度最低，机会最佳', cls:'vc-green' },
+        { dim:'趋势 × 社交声量一致性', signal:'搜索量↑53%（24M）五国中增速最高，TikTok 西班牙食谱内容爆发式增长推动持续需求', chip:'✓ 高速增长市场', cls:'vc-green' },
+        { dim:'痛点 × 差异化空间', signal:'Amazon.es 差评: 涂层脱落 + 容量小 + 无西班牙语界面 — Cecotec（本土价格战冠军）完全未解决品质问题', chip:'有明确切入点', cls:'vc-blue' },
+      ],
+      insight: '西班牙是五国中竞争最低、增速最快的市场。「耐用涂层 + 大容量 + 完整西班牙语界面」可以直接攻击 Cecotec 的弱点。建议切入 €55–€85 价格带，以耐用性背书（保修期延长）和西班牙本地食谱内容（Croquetas/Patatas Bravas）驱动 TikTok 流量。',
+      sku: {
+        priority: { title:'优先切入 · 耐用涂层大容量西班牙语款（5L+）', desc:'一星差评首位是涂层脱落，Cecotec 作为低价冠军完全没有解决这一问题。高品质不粘涂层 + 5L+ 大容量（西班牙家庭平均 3–4 人）+ 完整西班牙语界面是空白市场组合。', tags:['价格带 €55–85','涂层品质保证','5L+ 大容量','西班牙语界面'] },
+        sub:      { title:'次优方向 · 西班牙本地食谱预设款', desc:'西班牙消费者对本地食物有极强文化认同，内置 Croquetas/Patatas Bravas/Churros 程序的产品在 TikTok 有天然传播力。配合延长保修（2年→3年）建立品质信任。', tags:['价格带 €75–100','本地食谱预设','TikTok 传播力强'] },
+        avoid:    { title:'建议回避 · 低价无差异基础款', desc:'Cecotec 以本土优势把 €40–55 价格带做成价格战红海，且其销售渠道（El Corte Inglés）覆盖广。没有明显品质或功能差异化的新品进入该区间会被迅速淹没。', tags:['<€55 红海','Cecotec 强势区','无差异化'] },
+      },
+    },
+  },
+};
+
+/* ══ Guard 国家数据库 ══ */
+var GUARD_DATA = {
+  de: {
+    countryName: '德国',
+    countryCode: 'de',
+    countryLayer: 'DE',
+    risk: { level: '中低', cls: 'amber', blockers: 0, mandatories: 5, eta: '4–8 周' },
+    euRules: [
+      { name: 'LVD 2014/35/EU（低电压指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '带电产品强制要求 CE 认证，需提交技术文件 + 符合性声明（DoC）' },
+      { name: 'EMC 2014/30/EU（电磁兼容指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '需通过电磁兼容测试，防止无线电干扰' },
+      { name: 'EC 1935/2004（食品接触材料）', badge: '必须', badgeCls: 'rb-must', desc: '炸篮与食物直接接触，需通过迁移测试，确保材料安全' },
+    ],
+    localRules: [
+      { name: 'LFGB §30/31（德国食品和日用品法）', badge: '必须', badgeCls: 'rb-must', desc: '在欧盟法基础上的本地加严规定，炸篮/内胆涂层须额外认证' },
+      { name: 'ElektroG（德国电气设备法）', badge: '必须', badgeCls: 'rb-must', desc: '需在 stiftung ear 注册 WEEE 回收编号，才能在德国合法销售' },
+    ],
+    timeline: [
+      { week: 'W1–2', dot: 'red', name: '🔴 立即启动 CE 认证申请', detail: '委托 TÜV / SGS 等机构，准备技术文件、电路图、安规测试报告', parallel: '→ 同步准备 LFGB 迁移测试材料（炸篮 + 内胆涂层）' },
+      { week: 'W2–3', dot: 'amber', name: '🟡 提交 LFGB 食品接触材料测试', detail: '炸篮 + 涂层样品寄至德国认可实验室（如 ISEGA），周期约 3 周' },
+      { week: 'W3–4', dot: 'blue', name: '🔵 注册 WEEE 回收编号', detail: '在 stiftung ear 官网在线申请（周期 4–6 周），需德国授权代表地址', parallel: '→ 提前操作，避免成为上市阻断项' },
+      { week: 'W6–8', dot: 'green', name: '✅ CE + LFGB 证书到位', detail: '打印 CE 标志于产品和包装，准备德语说明书和安全警告标签' },
+    ],
+    actions: {
+      urgent: [
+        '委托第三方实验室（TÜV/SGS）申请 CE 认证（LVD + EMC），预估费用 €2,000–5,000',
+        '寄送炸篮/内胆涂层样品进行 LFGB 迁移测试，提前预约实验室排期',
+      ],
+      important: [
+        '在 stiftung ear 注册 WEEE 回收编号（必须有德国授权代表 Bevollmächtigter）',
+        '准备德语版产品说明书（须包含安全警告、能效信息、废弃物处理说明）',
+      ],
+      prepare: [
+        '建议在包装正面标注能效等级（Energieklasse），德国消费者高度敏感',
+        '营销文案需规避绝对化表达（"最好""第一"），德国 UWG 广告法严格',
+      ],
+    },
+    tips: '德国是欧盟对产品合规监管最严格的市场之一。LFGB 本地加严要求是许多中国品牌忽略的高风险点——即便已有 EC 1935 认证，仍需额外通过 LFGB 测试。建议预留 8 周认证周期，并确保在 Amazon.de 上架前 WEEE 编号已到位。',
+  },
+  it: {
+    countryName: '意大利',
+    countryCode: 'it',
+    countryLayer: 'IT',
+    risk: { level: '中低', cls: 'amber', blockers: 0, mandatories: 4, eta: '4–7 周' },
+    euRules: [
+      { name: 'LVD 2014/35/EU（低电压指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '带电产品 CE 认证核心要求，需提交技术文件 + DoC 符合性声明' },
+      { name: 'EMC 2014/30/EU（电磁兼容指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '需通过 EMC 电磁兼容测试，获得 CE 标志授权' },
+      { name: 'EC 1935/2004（食品接触材料）', badge: '必须', badgeCls: 'rb-must', desc: '炸篮与食物直接接触部件须通过食品接触材料迁移测试' },
+    ],
+    localRules: [
+      { name: 'D.Lgs 49/2014（意大利 WEEE 法令）', badge: '必须', badgeCls: 'rb-must', desc: '需向意大利 RAEE 系统（Centro di Coordinamento RAEE）注册，获得生产者编号' },
+    ],
+    timeline: [
+      { week: 'W1–2', dot: 'red', name: '🔴 立即启动 CE 认证申请', detail: '委托认可检测机构完成 LVD + EMC 测试，准备符合性声明（DoC）' },
+      { week: 'W2–3', dot: 'amber', name: '🟡 提交食品接触材料测试', detail: '炸篮 + 内胆涂层样品送至认可实验室，需符合 EC 1935/2004' },
+      { week: 'W3–4', dot: 'blue', name: '🔵 注册意大利 WEEE 生产者编号', detail: '向 Centro di Coordinamento RAEE 注册，提交企业信息和产品类别', parallel: '→ 在意大利电商平台上架前必须完成注册' },
+      { week: 'W6–7', dot: 'green', name: '✅ 认证完成，准备上市', detail: '标注 CE 标志和 RAEE 回收标志，准备意大利语产品说明书' },
+    ],
+    actions: {
+      urgent: [
+        '委托第三方实验室（如 IMQ / Intertek）申请 CE 认证（LVD + EMC）',
+        '进行食品接触材料迁移测试，炸篮和内胆涂层需符合欧盟 EC 1935/2004',
+      ],
+      important: [
+        '在意大利 RAEE 注册系统完成生产者注册，获取回收责任编号',
+        '准备意大利语（Italiano）版本产品说明书和安全标签',
+      ],
+      prepare: [
+        '产品包装需包含 RAEE 废弃物处理标志（画叉的垃圾桶图标）',
+        '意大利 Amazon.it 平台会审核 CE 证书，建议上架前准备好扫描件',
+      ],
+    },
+    tips: '意大利是欧盟第四大经济体，消费电子品类渗透率较高。相比德国，意大利的本地加严法规较少，主要风险点是 WEEE 注册（很多卖家被漏掉）和意大利语说明书要求。平台（Amazon.it）上架时可能要求上传 CE 认证文件，建议提前准备。',
+  },
+  fr: {
+    countryName: '法国',
+    countryCode: 'fr',
+    countryLayer: 'FR',
+    risk: { level: '中', cls: 'amber', blockers: 0, mandatories: 5, eta: '5–9 周' },
+    euRules: [
+      { name: 'LVD 2014/35/EU（低电压指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '带电产品 CE 认证，需技术文件 + DoC 符合性声明' },
+      { name: 'EMC 2014/30/EU（电磁兼容指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '电磁兼容测试合格后方可标注 CE' },
+      { name: 'EC 1935/2004（食品接触材料）', badge: '必须', badgeCls: 'rb-must', desc: '炸篮等食物接触部件须通过迁移测试' },
+    ],
+    localRules: [
+      { name: 'Code de la consommation（法国消费者保护法）', badge: '必须', badgeCls: 'rb-must', desc: '产品说明书必须提供法语版本，违者可被市场退出处罚' },
+      { name: 'DEEE（法国 WEEE 指令实施）', badge: '必须', badgeCls: 'rb-must', desc: '需向法国 éco-organismes（如 Ecologic / Ecosystem）注册，缴纳 DEEE 费用' },
+    ],
+    timeline: [
+      { week: 'W1–2', dot: 'red', name: '🔴 CE 认证 + 法语说明书', detail: '法语说明书是强制要求，建议与 CE 认证同步准备，可找专业本地化服务商' },
+      { week: 'W2–4', dot: 'amber', name: '🟡 食品接触材料测试', detail: '炸篮/内胆涂层样品送检，周期约 3 周' },
+      { week: 'W3–5', dot: 'blue', name: '🔵 注册法国 DEEE 生产者编号', detail: '选择 éco-organisme（Ecologic 最常用），提交企业信息并缴纳年费', parallel: '→ 无编号无法在法国合法销售' },
+      { week: 'W8–9', dot: 'green', name: '✅ 认证齐全，可在法国上市', detail: 'Amazon.fr 上架前确认 CE 文件、DEEE 编号和法语说明书三项均到位' },
+    ],
+    actions: {
+      urgent: [
+        '申请 CE 认证（LVD + EMC），同步启动食品接触材料测试',
+        '准备法语（Français）版本产品说明书和安全警告，这是法律强制要求',
+      ],
+      important: [
+        '在 Ecologic 或 Ecosystem 注册 DEEE 生产者编号并缴纳年度生态费',
+        '确认包装上标注 DEEE 废弃物标志（画叉垃圾桶）及 Triman 标志',
+      ],
+      prepare: [
+        'Amazon.fr 可能要求提供 DEEE 编号才能上架，提前注册可避免上架延迟',
+        '法国消费者注重产品描述的精确性，避免模糊夸大宣传（违反消费者保护法）',
+      ],
+    },
+    tips: '法国是中国卖家容易踩坑的市场：本地 DEEE 注册和法语说明书是最常见的阻断项，许多卖家因说明书无法语版而被强制下架。建议将法语本地化与认证工作并行推进，节省时间。',
+  },
+  nl: {
+    countryName: '荷兰',
+    countryCode: 'nl',
+    countryLayer: 'NL',
+    risk: { level: '低', cls: 'green', blockers: 0, mandatories: 4, eta: '3–6 周' },
+    euRules: [
+      { name: 'LVD 2014/35/EU（低电压指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '带电产品 CE 认证核心要求，需技术文件 + DoC' },
+      { name: 'EMC 2014/30/EU（电磁兼容指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '需 EMC 测试通过后方可标注 CE' },
+      { name: 'EC 1935/2004（食品接触材料）', badge: '必须', badgeCls: 'rb-must', desc: '食物接触部件（炸篮等）须符合迁移测试要求' },
+    ],
+    localRules: [
+      { name: 'WECR（荷兰电气电子废弃物法规）', badge: '必须', badgeCls: 'rb-must', desc: '须向荷兰 ICT Milieu 或 NVMP 注册，获得 WEEE 生产者编号' },
+    ],
+    timeline: [
+      { week: 'W1–2', dot: 'red', name: '🔴 启动 CE 认证申请', detail: 'LVD + EMC 测试，荷兰认可机构如 DEKRA、Kiwa 均可' },
+      { week: 'W2–3', dot: 'amber', name: '🟡 食品接触材料测试', detail: '炸篮/内胆送检，荷兰食品安全局（NVWA）监管范围' },
+      { week: 'W2–4', dot: 'blue', name: '🔵 注册荷兰 WEEE 生产者编号', detail: '向 ICT Milieu 注册，流程相对简洁，周期约 2–3 周', parallel: '→ 荷兰是欧盟 WEEE 执法较积极的国家' },
+      { week: 'W5–6', dot: 'green', name: '✅ 合规就绪，可上市', detail: '荷兰语说明书建议提供（不强制，但影响用户体验和评分）' },
+    ],
+    actions: {
+      urgent: [
+        '申请 CE 认证（LVD + EMC），荷兰对 CE 标志审查较严格',
+        '进行食品接触材料迁移测试，确保炸篮材料合规',
+      ],
+      important: [
+        '向 ICT Milieu 注册 WEEE 生产者编号',
+        '建议提供荷兰语（Nederlands）说明书，提升本地消费者信任',
+      ],
+      prepare: [
+        '荷兰消费者使用 Amazon.nl 和 bol.com，两平台上架规则略有差异',
+        '荷兰是欧盟海关大港（鹿特丹），清关效率高，但对产品合规文件要求严格',
+      ],
+    },
+    tips: '荷兰是欧盟合规门槛相对较低的市场，主要风险是 WEEE 注册被漏掉。由于是欧洲重要的物流节点，在荷兰合规后可以较低成本辐射周边市场（比利时、德国等）。',
+  },
+  es: {
+    countryName: '西班牙',
+    countryCode: 'es',
+    countryLayer: 'ES',
+    risk: { level: '低', cls: 'green', blockers: 0, mandatories: 4, eta: '4–7 周' },
+    euRules: [
+      { name: 'LVD 2014/35/EU（低电压指令）', badge: '必须', badgeCls: 'rb-fatal', desc: '带电产品 CE 认证，需技术文件 + DoC 符合性声明' },
+      { name: 'EMC 2014/30/EU（电磁兼容指令）', badge: '必须', badgeCls: 'rb-fatal', desc: 'EMC 测试合格是 CE 标志前提条件' },
+      { name: 'EC 1935/2004（食品接触材料）', badge: '必须', badgeCls: 'rb-must', desc: '炸篮/接触食物部件须通过迁移测试' },
+    ],
+    localRules: [
+      { name: 'RD 110/2015（西班牙 WEEE 法规）', badge: '必须', badgeCls: 'rb-must', desc: '须向 ECOTIC 或 RECYCLIA 等系统注册，获取西班牙 WEEE 生产者编号' },
+    ],
+    timeline: [
+      { week: 'W1–2', dot: 'red', name: '🔴 CE 认证申请', detail: '可联系 AENOR（西班牙认证机构）或欧盟通用检测机构' },
+      { week: 'W2–3', dot: 'amber', name: '🟡 食品接触材料测试', detail: '炸篮/涂层送检，须符合欧盟 EC 1935/2004' },
+      { week: 'W3–4', dot: 'blue', name: '🔵 注册西班牙 WEEE 生产者编号', detail: '向 ECOTIC 或 RECYCLIA 系统注册（二选一），流程约 2–3 周' },
+      { week: 'W6–7', dot: 'green', name: '✅ 合规完成，可上市', detail: '西班牙语说明书是消费者期望（建议提供），含安全警告和废弃物说明' },
+    ],
+    actions: {
+      urgent: [
+        '申请 CE 认证（LVD + EMC），与大多数欧盟国家要求相同',
+        '进行食品接触材料测试，样品送至认可实验室',
+      ],
+      important: [
+        '向 ECOTIC 或 RECYCLIA 注册西班牙 WEEE 生产者编号',
+        '准备西班牙语（Español）产品说明书，Amazon.es 平台买家高度本地化',
+      ],
+      prepare: [
+        '西班牙消费者对价格敏感，€50–90 价格带竞争激烈，合规成本需计入定价',
+        '建议提供当地售后联系方式，西班牙消费者投诉率较高',
+      ],
+    },
+    tips: '西班牙是南欧最大的电商市场，整体合规门槛与其他欧盟国家相似，本地加严规定较少。西班牙语说明书不是法律强制，但对于 Amazon.es 上的用户评价影响显著。WEEE 注册是最常见的遗漏项。',
+  }
+};
+
+function makeRuleCard(rule) {
+  return '<div class="rule-card">' +
+    '<div class="rule-sev ' + (rule.badgeCls === 'rb-fatal' ? 'rs-must' : 'rs-high') + '"></div>' +
+    '<div class="rule-body">' +
+      '<div class="rule-name">' + escHtml(rule.name) + ' <span class="rule-badge ' + rule.badgeCls + '">' + rule.badge + '</span></div>' +
+      '<div class="rule-desc">' + escHtml(rule.desc) + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function makeTimelineItem(item, isLast) {
+  return '<div class="ct-item">' +
+    '<div class="ct-week">' + escHtml(item.week) + '</div>' +
+    '<div class="ct-line">' +
+      '<div class="ct-dot ' + item.dot + '"></div>' +
+      (isLast ? '' : '<div class="ct-connector"></div>') +
+    '</div>' +
+    '<div class="ct-content">' +
+      '<div class="ct-name">' + item.name + '</div>' +
+      '<div class="ct-detail">' + escHtml(item.detail) + '</div>' +
+      (item.parallel ? '<div class="ct-parallel">' + escHtml(item.parallel) + '</div>' : '') +
+    '</div>' +
+  '</div>';
+}
+
+function makeExecItem(text, bulletCls) {
+  return '<div class="ec-item">' +
+    '<div class="ec-bullet ' + bulletCls + '">✓</div>' +
+    '<div>' + escHtml(text) + '</div>' +
+  '</div>';
+}
+
+function showGuardReport(cat, co) {
+  clearReport();
+
+  // 根据 state.country 获取数据，fallback to 'de'
+  var countryKey = state.country || 'de';
+  var d = GUARD_DATA[countryKey] || GUARD_DATA['de'];
+
+  // ── 1. 决策摘要（Verdict Header）──
+  var verdictHtml = '<div class="guard-verdict">' +
+    '<div class="gv-light ' + d.risk.cls + '"></div>' +
+    '<div class="gv-status" style="color:var(--' + d.risk.cls + ')">' + d.risk.level + '风险</div>' +
+    '<div class="gv-counters">' +
+      '<div class="gv-cnt"><div class="gvc-num" style="color:var(--green)">' + d.risk.blockers + '</div><div class="gvc-label">阻断项</div></div>' +
+      '<div class="gv-cnt"><div class="gvc-num" style="color:var(--red)">' + d.risk.mandatories + '</div><div class="gvc-label">强制要求</div></div>' +
+    '</div>' +
+    '<div class="gv-eta"><div class="gv-eta-num">' + d.risk.eta + '</div><div class="gv-eta-label">预计认证周期</div></div>' +
+    '<div style="max-width:260px">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Guard Agent 判断</div>' +
+      '<div style="font-size:11px;color:var(--text2);line-height:1.6">' + escHtml(d.tips) + '</div>' +
+    '</div>' +
+  '</div>';
+  addReportSection(verdictHtml);
+
+  // ── 2. 法规分层地图 ──
+  var euCards = d.euRules.map(function(r){ return makeRuleCard(r); }).join('');
+  var localCards = d.localRules.map(function(r){ return makeRuleCard(r); }).join('');
+  var coTagCls = 'rll-' + countryKey;
+
+  var regMapHtml = '<div class="reg-map">' +
+    '<div style="padding:14px 18px 10px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:10px">' +
+      '<div style="font-size:15px;font-weight:700;flex:1">法规分层地图</div>' +
+      '<div style="font-size:11px;color:var(--text2)">法规分类推断：<strong>带电产品</strong> + <strong>食品接触材料</strong></div>' +
+    '</div>' +
+    '<div class="reg-layer">' +
+      '<div class="reg-layer-label">' +
+        '<span class="rll-tag rll-eu">EU</span>' +
+        '<div class="rll-name">欧盟统一法规</div>' +
+      '</div>' +
+      '<div class="reg-layer-rules">' + euCards + '</div>' +
+    '</div>' +
+    '<div class="reg-layer">' +
+      '<div class="reg-layer-label">' +
+        '<span class="rll-tag ' + coTagCls + '">' + d.countryLayer + '</span>' +
+        '<div class="rll-name">' + d.countryName + '本地加严</div>' +
+      '</div>' +
+      '<div class="reg-layer-rules">' + localCards + '</div>' +
+    '</div>' +
+  '</div>';
+  addReportSection(regMapHtml);
+
+  // ── 3. 认证时间轴 ──
+  var timelineItems = d.timeline.map(function(item, i) {
+    return makeTimelineItem(item, i === d.timeline.length - 1);
+  }).join('');
+
+  var timelineHtml = '<div class="cert-timeline">' +
+    '<div class="ct-head">' +
+      '<div class="ct-head-title">认证时间轴（建议顺序）</div>' +
+      '<div style="font-size:11px;color:var(--amber);font-weight:600">预计 ' + d.risk.eta + ' 完成</div>' +
+    '</div>' +
+    '<div class="ct-body"><div class="ct-track">' + timelineItems + '</div></div>' +
+  '</div>';
+  addReportSection(timelineHtml);
+
+  // ── 4. 执行清单（2列）──
+  var urgentItems = d.actions.urgent.map(function(t){ return makeExecItem(t, 'ecb-red'); }).join('');
+  var importantItems = d.actions.important.map(function(t){ return makeExecItem(t, 'ecb-amber'); }).join('');
+  var prepareItems = d.actions.prepare.map(function(t){ return makeExecItem(t, 'ecb-blue'); }).join('');
+
+  var execHtml = '<div class="exec-grid">' +
+    '<div class="exec-card">' +
+      '<div class="ec-head" style="color:var(--red)">🔴 紧急执行（第 1–2 周）</div>' +
+      '<div class="ec-body">' + urgentItems + '</div>' +
+    '</div>' +
+    '<div class="exec-card">' +
+      '<div class="ec-head" style="color:var(--amber)">🟡 重要事项（第 2–4 周）</div>' +
+      '<div class="ec-body">' + importantItems + '</div>' +
+    '</div>' +
+    '<div class="exec-card" style="grid-column:1/-1">' +
+      '<div class="ec-head" style="color:var(--blue)">🔵 提前准备 · 避免踩坑</div>' +
+      '<div class="ec-body" style="flex-direction:row;flex-wrap:wrap;gap:8px 20px">' + prepareItems + '</div>' +
+    '</div>' +
+  '</div>';
+  addReportSection(execHtml);
+
+  // ── 5. 免责声明 ──
+  addReportSection('<div style="padding:12px 16px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text3);line-height:1.7">⚠ <strong>免责声明：</strong>以上为 Guard Agent 基于法规知识库的初步研判结果，不构成专业法律意见。产品上市前建议咨询具有欧盟市场经验的专业法律顾问或认证机构。</div>');
+}
+
+/* ══ Stage 3: HITL ══ */
+function handleHitl(choice, cat, co) {
+  if (choice === 'stop') {
+    addUserBubble('风险过高，退出本次分析');
+    doExit();
+    return;
+  }
+  var msg = choice === 'noted'
+    ? '已知悉风险，继续执行。Marketing Agent 将接收合规约束：标注 CE 标志、不使用绝对化表达。'
+    : '确认继续，启动 Marketing Agent 生成本土化文案…';
+  addUserBubble(choice === 'noted' ? '知悉风险，继续' : '确认继续');
+  delay(300, function() {
+    addAgentBubble(msg, 'normal');
+    delay(600, function() { runMarketing(cat, co); });
+  });
+}
+
+/* ══ Stage 4: Marketing ══ */
+/* ══ Marketing 国家数据库 ══ */
+var MKTG_DATA = {
+  de: {
+    flag: '🇩🇪', name: '德国', platform: 'Amazon.de',
+    tagline: '理性务实型 · 节能合规优先 · 功能价值驱动',
+    persona: '30–50岁家庭主妇/主夫，注重性价比与产品质量，对节能标识高度敏感，购买前会认真阅读说明书和评价。',
+    strategy: '以「可进洗碗机 + 大容量 + 节能A级」为核心三要素，直接回应 Reddit/Amazon 最高频痛点，文案避免绝对化表达（UWG广告法限制）。',
+    kwMain: [
+     {kw:'Heißluftfritteuse', cn:'空气炸锅', vol:'高 24.6万/月', used:true},
+       {kw:'Airfryer XXL', cn:'大号空气炸锅', vol:'高 18.3万/月', used:true},
+       {kw:'Heißluftfritteuse 5.5L', cn:'5.5升空气炸锅', vol:'中 6.8万/月', used:true},
+       {kw:'Airfryer spülmaschinenfest', cn:'可进洗碗机炸锅', vol:'中 4.2万/月', used:true},
+       {kw:'Heißluftfritteuse ohne Öl', cn:'无油空气炸锅', vol:'中 3.1万/月', used:false},
+    ],
+    competitors: [
+      {brand:'Philips HD9252', price:'€89', rating:'4.5★', reviews:'12.4K', gap:'炸篮不可进洗碗机，仅4.2L容量', img:'#2563EB'},
+      {brand:'Ninja AF160EU', price:'€99', rating:'4.4★', reviews:'8.7K', gap:'噪音较大（>52dB），无能效标注', img:'#7C3AED'},
+      {brand:'Cosori CP158', price:'€69', rating:'4.3★', reviews:'19.2K', gap:'塑料感强，无德语客服支持', img:'#DC2626'},
+    ],
+    title: 'Heißluftfritteuse XXL 5,5L – 1700W Airfryer mit 8 Voreinstellungen, spülmaschinenfestes Zubehör, fettfreies Kochen, leise, ✓CE Energieklasse A',
+    bullets: [
+      {tag:'💧 解决痛点#1 清洁', en:'【Spülmaschinenfest】 Korb & Grillrost komplett spülmaschinenfest – in 2 Minuten sauber, kein Einweichen nötig', cn:'炸篮+烤网全部可进洗碗机，直接回应#1差评痛点'},
+      {tag:'🍳 解决痛点#2 容量', en:'【XXL 5,5L für die ganze Familie】 Platz für ein ganzes Hähnchen (1,5kg) – ideal für 3–5 Personen', cn:'整鸡可放，对应「容量太小」痛点，引用具体克重增加可信度'},
+      {tag:'⚡ 本土化 节能', en:'【Energieklasse A & Leise】 30% weniger Stromverbrauch als vergleichbare Modelle – deutlich leiser (≤42dB)', cn:'德国消费者决策核心——节能等级，同时覆盖噪音痛点'},
+      {tag:'🥗 购买动机 健康', en:'【Fettfrei Kochen】 Bis zu 95% weniger Fett bei gleichem Geschmack – knusprig ohne schlechtes Gewissen', cn:'核心购买动机，避免使用最高级表达（UWG合规）'},
+      {tag:'🎛️ 信任背书', en:'【8 Automatikprogramme + CE-Zertifiziert】 Hähnchen, Pommes, Gemüse, Backen – auf Knopfdruck, sicher zugelassen ✓', cn:'功能+合规双背书，CE标志符合Guard要求'},
+    ],
+    patterns: [
+      {type:'痛点直击型', example:'Schluss mit dem lästigen Einweichen – unser Korb ist spülmaschinenfest', why:'直接说出用户的痛点，引发强烈共鸣，适合副标题和A+内容'},
+      {type:'数据佐证型', example:'95% weniger Fett, gleicher Knusper-Effekt – getestet von 12.000+ Käufern', why:'德国消费者信任具体数字，数字越精确可信度越高'},
+      {type:'场景代入型', example:'Montag Hähnchen, Dienstag Pommes, Mittwoch Gemüse – dein Alltagshelfer', why:'日常场景植入，降低决策门槛，适合图片文字叠加'},
+    ],
+    compliance: ['✓ 标注 CE 认证（Guard 要求）','✓ 无绝对化表达（UWG 合规）','✓ 能效等级 A 标注','✓ 直接德语写作（非机器翻译）'],
+  },
+  it: {
+    flag: '🇮🇹', name: '意大利', platform: 'Amazon.it',
+    tagline: '美食文化型 · 家庭聚餐场景 · 颜值与实用并重',
+    persona: '25–45岁家庭用户，热爱烹饪，重视食物口感与健康，家庭聚餐频繁，对产品外观和颜色有偏好，信任知名品牌但也接受性价比新品。',
+    strategy: '围绕意大利饮食文化切入，强调「地中海饮食 + 无油健康 + 家庭聚餐场景」，用意大利传统食谱（Fritto misto、Arancini）引发文化共鸣。',
+    kwMain: [
+     {kw:'Friggitrice ad aria', cn:'空气炸锅', vol:'高 21.8万/月', used:true},
+       {kw:'Friggitrice senza olio', cn:'无油炸锅', vol:'高 15.4万/月', used:true},
+       {kw:'Air fryer grande capacità', cn:'大容量空气炸锅', vol:'中 7.2万/月', used:true},
+       {kw:'Friggitrice ad aria 5 litri', cn:'5升空气炸锅', vol:'中 4.6万/月', used:true},
+       {kw:'Friggitrice digitale famiglia', cn:'数字家用炸锅', vol:'中 2.8万/月', used:false},
+    ],
+    competitors: [
+      {brand:'Philips HD9270', price:'€94', rating:'4.4★', reviews:'9.3K', gap:'5.5L但炸篮不可拆，清洁麻烦', img:'#2563EB'},
+      {brand:'Tefal EY505D', price:'€79', rating:'4.2★', reviews:'5.1K', gap:'程序少，无法设定精确温度', img:'#16A34A'},
+      {brand:'Moulinex EZ935B', price:'€85', rating:'4.3★', reviews:'4.8K', gap:'外观陈旧，无智能程序', img:'#D97706'},
+    ],
+    title: 'Friggitrice ad Aria XXL 5,5L – 1700W, 8 Programmi, Cestello Lavabile in Lavastoviglie, Cucina Senza Olio, Silenziosa, ✓CE Classe A',
+    bullets: [
+      {tag:'🫒 文化共鸣 健康', en:'【Cucina Mediterranea Sana】 Fino al 95% meno grassi – arancini, fritto misto e patatine croccanti senza sensi di colpa', cn:'用意大利传统食物名称引发文化共鸣，健康诉求结合美食场景'},
+      {tag:'👨‍👩‍👧 家庭场景', en:'【XXL 5,5L per tutta la famiglia】 Capace di contenere un pollo intero – perfetto per 4–6 persone a tavola', cn:'意大利家庭通常人口较多，强调大容量满足聚餐需求'},
+      {tag:'💧 清洁便利', en:'【Facile da Pulire】 Cestello e griglia completamente lavabili in lavastoviglie – pronto in 2 minuti', cn:'意大利人重视烹饪后的清洁便利，这是高频评价关键词'},
+      {tag:'🎛️ 智能程序', en:'【8 Programmi Automatici】 Pollo, pizza, verdure, dolci – cottura perfetta con un solo tocco', cn:'列举意大利常见食物，增加场景相关性'},
+      {tag:'🏆 信任认证', en:'【Silenzioso & Certificato CE】 Solo ≤42dB – cuoci senza disturbare, approvato per sicurezza in tutta Europa ✓', cn:'噪音+安全认证双重背书，意大利家庭对噪音有一定敏感度'},
+    ],
+    patterns: [
+      {type:'美食场景型', example:'Arancini croccanti, pollo dorato, patatine perfette – ogni giorno una ricetta nuova', why:'意大利消费者强烈认同食物文化，美食场景引发购买欲'},
+      {type:'家庭情感型', example:'Tutta la famiglia a tavola, senza preoccuparsi dei grassi', why:'意大利家庭聚餐文化深厚，家庭场景有强烈情感共鸣'},
+      {type:'对比说服型', example:'Stessa croccantezza del fritto tradizionale, 95% meno olio', why:'「保留口感，减少油脂」是跨文化的强力卖点'},
+    ],
+    compliance: ['✓ 标注 CE 认证（Guard 要求）','✓ 包含 RAEE 回收标志','✓ 直接意大利语写作','✓ 无夸大性绝对表达'],
+  },
+  fr: {
+    flag: '🇫🇷', name: '法国', platform: 'Amazon.fr',
+    tagline: '美食精致型 · 健康生活方式 · 品质敏感消费者',
+    persona: '28–48岁注重生活品质的都市用户，对食材和烹饪方式有较高要求，关注健康与环保，对劣质品容忍度极低，评价内容详细且影响力大。',
+    strategy: '围绕「法式健康烹饪 + 环保节能 + 精致生活」，强调产品作为日常烹饪工具的精准性和可靠性，文案用词精确克制，不夸大。',
+    kwMain: [
+     {kw:'Friteuse sans huile', cn:'无油炸锅', vol:'高 19.2万/月', used:true},
+       {kw:'Airfryer grande capacité', cn:'大容量空气炸锅', vol:'高 13.7万/月', used:true},
+       {kw:'Friteuse à air chaud', cn:'热风炸锅', vol:'中 8.4万/月', used:true},
+       {kw:'Friteuse sans huile 5L', cn:'5升无油炸锅', vol:'中 5.1万/月', used:true},
+       {kw:'Friteuse silencieuse famille', cn:'家用静音炸锅', vol:'中 2.9万/月', used:false},
+    ],
+    competitors: [
+      {brand:'Philips HD9270', price:'€99', rating:'4.4★', reviews:'11.2K', gap:'法语说明书薄弱，客服响应慢', img:'#2563EB'},
+      {brand:'Moulinex EZ935B', price:'€89', rating:'4.3★', reviews:'7.6K', gap:'程序固定，无法自定义温度曲线', img:'#16A34A'},
+      {brand:'Tefal ActiFry', price:'€109', rating:'4.2★', reviews:'6.3K', gap:'搅拌桨设计特殊，部分食物效果不佳', img:'#D97706'},
+    ],
+    title: 'Friteuse Sans Huile XXL 5,5L – 1700W, 8 Programmes, Panier Lave-Vaisselle, Cuisson Saine, Silencieuse ≤42dB, ✓CE Classe A',
+    bullets: [
+      {tag:'🥗 健康生活', en:'【Cuisine Saine au Quotidien】 Jusqu\'à 95% moins de matières grasses – les saveurs préservées, la légèreté en plus', cn:'法国消费者高度重视健康，「保留风味+减脂」是黄金卖点'},
+      {tag:'👨‍👩‍👧 家庭容量', en:'【Grande Capacité 5,5L】 Un poulet entier, des légumes pour toute la famille – idéal pour 4 à 6 personnes', cn:'法国家庭通常4-5人，大容量诉求直接'},
+      {tag:'💧 清洁设计', en:'【Nettoyage Facile】 Panier et grille entièrement compatibles lave-vaisselle – prêt en 2 minutes', cn:'法国消费者对「易清洁」要求高，这是高频好评关键词'},
+      {tag:'🔇 静音设计', en:'【Silencieuse ≤42dB】 Aussi discrète qu\'une conversation normale – cuisinez à toute heure sans déranger', cn:'法国公寓密集，邻里噪音敏感，≤42dB是强力卖点'},
+      {tag:'🌱 环保认证', en:'【Économe en Énergie & Certifiée CE】 Classe A · Moins de consommation, plus de saveur ✓', cn:'法国消费者环保意识强，能效等级是购买决策因素'},
+    ],
+    patterns: [
+      {type:'精准数据型', example:'95% moins de graisse, 100% de saveur – prouvé par 8 000 clients satisfaits', why:'法国消费者重视精确数字，夸张表达反而降低信任'},
+      {type:'生活方式型', example:'Cuisinez léger chaque soir, sans sacrifier le goût ni le temps', why:'「融入日常生活」的语境比产品功能描述更有代入感'},
+      {type:'对比证明型', example:'Comparé à la friture traditionnelle : 95% moins de matières grasses, même croustillant', why:'法国消费者习惯对比评估，量化对比数据说服力强'},
+    ],
+    compliance: ['✓ 标注 CE 认证（Guard 要求）','✓ 完整法语说明书（法律强制）','✓ DEEE 生产者编号标注','✓ 无绝对化表达（消费者保护法合规）'],
+  },
+  nl: {
+    flag: '🇳🇱', name: '荷兰', platform: 'Amazon.nl / bol.com',
+    tagline: '实用主义型 · 性价比优先 · 直接高效',
+    persona: '25–45岁务实型消费者，重视产品实际价值与性价比，不喜欢夸夸其谈的营销语言，更信任用户评价和具体规格数据。',
+    strategy: '直接、简洁、数据导向。强调具体规格（L数、dB值、瓦数），用真实评价数量建立信任，避免夸大修辞。',
+    kwMain: [
+     {kw:'Heteluchtfriteuse', cn:'空气炸锅', vol:'高 16.4万/月', used:true},
+       {kw:'Airfryer groot', cn:'大号空气炸锅', vol:'高 11.8万/月', used:true},
+       {kw:'Friteuse zonder olie', cn:'无油炸锅', vol:'中 6.3万/月', used:true},
+       {kw:'Heteluchtfriteuse 5L gezin', cn:'5升家用空气炸锅', vol:'中 3.7万/月', used:true},
+       {kw:'Stille airfryer', cn:'静音空气炸锅', vol:'中 2.2万/月', used:false},
+    ],
+    competitors: [
+      {brand:'Philips HD9252', price:'€89', rating:'4.4★', reviews:'8.9K', gap:'炸篮不可入洗碗机，客单价偏高', img:'#2563EB'},
+      {brand:'Ninja AF160EU', price:'€95', rating:'4.3★', reviews:'5.4K', gap:'噪音大，说明书缺荷兰语版', img:'#7C3AED'},
+      {brand:'Princess 183001', price:'€59', rating:'4.1★', reviews:'13.7K', gap:'品质感偏低，功能单一', img:'#D97706'},
+    ],
+    title: 'Heteluchtfriteuse XXL 5,5L – 1700W, 8 Programma\'s, Vaatwasmachinebestendig, Vet-vrij Koken, ≤42dB Stil, ✓CE Energieklasse A',
+    bullets: [
+      {tag:'💧 核心功能', en:'【Vaatwasmachinebestendig】 Mand en rooster volledig vaatwasserbestendig – klaar in 2 minuten, geen gedoe', cn:'直接说核心功能，荷兰消费者不需要太多情感渲染'},
+      {tag:'🍳 容量规格', en:'【5,5L XXL Capaciteit】 Hele kip (1,5kg) past erin – genoeg voor 4–6 personen', cn:'具体数字（公斤）比模糊的「大容量」更有说服力'},
+      {tag:'⚡ 节能数据', en:'【Energieklasse A – 30% Zuiniger】 Lager stroomverbruik, lagere energierekening per maand', cn:'荷兰能源价格较高，节能直接关联金钱节省'},
+      {tag:'🔇 噪音数据', en:'【Stil ≤42dB】 Stiller dan een normale conversatie – ook \'s avonds laat koken zonder overlast', cn:'精确dB值比「静音」更有说服力，荷兰公寓密集'},
+      {tag:'🏆 认证保障', en:'【CE-gecertificeerd & 8 Automatische Programma\'s】 Kip, friet, groenten, bakken – veilig en eenvoudig ✓', cn:'CE认证+功能数量，双重实用性背书'},
+    ],
+    patterns: [
+      {type:'直接规格型', example:'5,5 liter. 1700 watt. 8 programma\'s. Klaar.', why:'荷兰消费者欣赏简洁直接，不喜欢过多修辞'},
+      {type:'成本效益型', example:'Minder vet, minder stroom, minder tijd in de keuken', why:'用三个「更少」展示实际价值，务实导向'},
+      {type:'评价数字型', example:'Meer dan 8.000 tevreden gebruikers – lees zelf de ervaringen', why:'荷兰消费者高度信任同类用户评价'},
+    ],
+    compliance: ['✓ 标注 CE 认证（Guard 要求）','✓ WEEE 生产者编号标注','✓ 荷兰语（Nederlands）说明书','✓ 无夸大性表达'],
+  },
+  es: {
+    flag: '🇪🇸', name: '西班牙', platform: 'Amazon.es',
+    tagline: '社交聚餐型 · 家庭情感驱动 · 价格敏感',
+    persona: '25–45岁家庭用户，热爱烹饪和社交聚餐，家庭成员多，重视性价比，对价格敏感，喜欢热闹的食物场景描述。',
+    strategy: '强调「家庭聚餐 + 西班牙传统食物（Patatas bravas / Croquetas）+ 超值性价比」，营造热闹的家庭烹饪氛围。',
+    kwMain: [
+     {kw:'Freidora de aire', cn:'空气炸锅', vol:'高 22.6万/月', used:true},
+       {kw:'Airfryer sin aceite', cn:'无油空气炸锅', vol:'高 17.3万/月', used:true},
+       {kw:'Freidora de aire grande', cn:'大容量空气炸锅', vol:'中 8.9万/月', used:true},
+       {kw:'Freidora 5 litros familia', cn:'5升家用炸锅', vol:'中 5.4万/月', used:true},
+       {kw:'Freidora silenciosa', cn:'静音炸锅', vol:'中 3.1万/月', used:false},
+    ],
+    competitors: [
+      {brand:'Cecotec Cecofry', price:'€59', rating:'4.2★', reviews:'22.4K', gap:'本土品牌，质量参差，售后差', img:'#DC2626'},
+      {brand:'Philips HD9252', price:'€89', rating:'4.4★', reviews:'7.8K', gap:'价格偏高，西班牙市场溢价承受力有限', img:'#2563EB'},
+      {brand:'Tefal EY505D', price:'€79', rating:'4.1★', reviews:'4.2K', gap:'程序单一，西班牙语说明书不完整', img:'#16A34A'},
+    ],
+    title: 'Freidora de Aire XXL 5,5L – 1700W, 8 Programas, Cesta Apta para Lavavajillas, Cocina Sin Aceite, Silenciosa ≤42dB, ✓CE Clase A',
+    bullets: [
+      {tag:'🥘 美食场景', en:'【Patatas Bravas, Croquetas y Pollo sin Aceite】 Hasta un 95% menos grasa – el sabor de siempre, más saludable', cn:'用西班牙标志性食物引发强烈文化共鸣'},
+      {tag:'👨‍👩‍👧‍👦 家庭聚餐', en:'【5,5L XXL para Toda la Familia】 Pollo entero de 1,5kg – perfecta para reuniones familiares de 4–6 personas', cn:'西班牙家庭聚餐文化浓厚，大容量是核心诉求'},
+      {tag:'💧 省心清洁', en:'【Fácil de Limpiar】 Cesta y rejilla aptas para lavavajillas – limpia en 2 minutos, sin esfuerzo', cn:'西班牙用户差评关键词之一是「清洁麻烦」'},
+      {tag:'🔇 安静使用', en:'【Ultra Silenciosa ≤42dB】 Cocina de día o de noche sin molestar a nadie en casa', cn:'西班牙公寓密集，夜间烹饪噪音是实际痛点'},
+      {tag:'🏷️ 超值品质', en:'【Calidad Premium, Precio Justo】 CE Certificada · Clase A · 8 Programas Automáticos ✓', cn:'西班牙消费者价格敏感，「高品质合理价格」是有效定位'},
+    ],
+    patterns: [
+      {type:'美食文化型', example:'Patatas perfectas, croquetas crujientes, pollo dorado – todo sin aceite', why:'西班牙食物名称引发强烈文化认同'},
+      {type:'家庭氛围型', example:'La freidora que hace feliz a toda la familia en cada comida', why:'家庭情感是西班牙消费决策的重要因素'},
+      {type:'性价比型', example:'Calidad de marca premium a precio accesible – más de 5.000 familias ya confían', why:'西班牙消费者价格敏感，「物超所值」是强力购买理由'},
+    ],
+    compliance: ['✓ 标注 CE 认证（Guard 要求）','✓ WEEE 生产者编号标注','✓ 西班牙语（Español）说明书','✓ 无虚假承诺表达'],
+  }
+};
+
+function runMarketing(cat, co) {
+  state.stage = 'marketing_running';
+  var md = MKTG_DATA[state.country] || MKTG_DATA['de'];
+  setReportHeader('Marketing Agent · 本土化文案', '生成中…', 'rhb-running');
+  clearReport();
+
+  delay(200, function() {
+    addAgentBubble('已接收合规约束，启动 Marketing Agent。抓取 ' + md.platform + ' 竞品 listing 数据…', 'thinking');
+  });
+
+  var mTools = [
+    {name:'amazon_listing_scraper · ' + md.platform, t:500},
+    {name:'keyword_density_analyzer', t:1400},
+    {name:'ad_law_check · ' + md.name + '广告法', t:2200},
+    {name:'listing_optimizer · ' + md.name + '本土化', t:3200},
+  ];
+  mTools.forEach(function(tool) {
+    delay(tool.t, function() {
+      var tc = addToolCall(tool.name, 'spin');
+      delay(700, function() {
+        tc.querySelector('.tc-status').textContent = '✓ 完成';
+        tc.querySelector('.tc-status').className = 'tc-status ok';
+      });
+    });
+  });
+
+  delay(1500, function() {
+    addAgentBubble('竞品数据抓取完成。识别到 3 个竞品关键差距，提炼 ' + md.kwMain.length + ' 个核心关键词…', 'normal');
+  });
+  delay(2800, function() {
+    addAgentBubble('<strong>直接用' + md.name + '语写作</strong>（非翻译），植入本地消费者痛点和文化偏好，合规约束已内嵌…', 'thinking');
+  });
+
+  delay(4500, function() {
+    addAgentBubble('文案生成完成！' + md.flag + ' ' + md.platform + ' Listing 已显示在右侧，所有合规约束已遵守。', 'normal');
+    showMarketingReport(cat, co);
+    state.stage = 'done';
+    setReportHeader('Marketing 文案报告 · ' + cat + ' × ' + md.name, '生成完成', 'rhb-done');
+
+    delay(500, function() {
+      addAgentBubble('✅ <strong>全链路分析完成</strong>：Scout → Guard → Marketing 三阶段报告已生成。如需重新分析请刷新页面。', 'system');
+      unlockInput();
+    });
+  });
+}
+
+function showMarketingReport(cat, co) {
+  var md = MKTG_DATA[state.country] || MKTG_DATA['de'];
+  var ts = '抓取时间：2025-07-15 ' + (9 + Math.floor(Math.random()*3)) + ':' + (10+Math.floor(Math.random()*40)) + ' · 来源：' + md.platform;
+
+  // ── 1. 本土化策略 Header ──
+  var stratHtml = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;animation:fadeUp .4s ease">' +
+    '<div style="padding:16px 20px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--purple-lt),var(--surface2));display:flex;align-items:center;gap:14px">' +
+      '<div style="font-size:32px">' + md.flag + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Marketing Agent · 本土化策略</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + md.name + ' · ' + md.tagline + '</div>' +
+      '</div>' +
+      '<div style="font-size:10px;color:var(--text3);text-align:right">' + md.platform + '</div>' +
+    '</div>' +
+    '<div style="padding:14px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+      '<div>' +
+        '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:5px">消费者画像</div>' +
+        '<div style="font-size:12px;color:var(--text2);line-height:1.65">' + escHtml(md.persona) + '</div>' +
+      '</div>' +
+      '<div style="background:var(--purple-lt);border:1px solid var(--purple-bd);border-radius:8px;padding:12px">' +
+        '<div style="font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;margin-bottom:5px">核心文案策略</div>' +
+        '<div style="font-size:12px;color:var(--purple);line-height:1.65">' + escHtml(md.strategy) + '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+  addReportSection(stratHtml);
+
+  // ── 2. 竞品分析 + 关键词（并列两列）──
+  var compCards = md.competitors.map(function(c) {
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;gap:10px;align-items:flex-start">' +
+      '<div style="width:40px;height:40px;border-radius:7px;background:' + c.img + ';flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">' + c.brand.split(' ')[0].slice(0,3).toUpperCase() + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px">' + escHtml(c.brand) + '</div>' +
+        '<div style="display:flex;gap:8px;font-size:11px;color:var(--text2);margin-bottom:5px">' +
+          '<span style="font-weight:700">' + c.price + '</span>' +
+          '<span>' + c.rating + '</span>' +
+          '<span style="color:var(--text3)">' + c.reviews + ' 评价</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--red);background:var(--red-lt);border:1px solid var(--red-bd);border-radius:5px;padding:4px 8px">⚠ 差距：' + escHtml(c.gap) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  var kwRows = md.kwMain.map(function(k) {
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
+        '<div style="flex:1;font-size:12px;font-weight:700;color:var(--text);font-family:Georgia,serif;word-break:break-word">' + escHtml(k.kw) + '</div>' +
+        '<div style="font-size:10px;padding:2px 7px;border-radius:100px;flex-shrink:0;' + (k.used ? 'background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)' : 'background:var(--surface3);color:var(--text3);border:1px solid var(--border)') + ';font-weight:600;white-space:nowrap">' + (k.used ? '✓ 已植入' : '— 暂未用') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="font-size:11px;color:var(--text3)">中文：' + escHtml(k.cn || '') + '</div>' +
+        '<div style="font-size:10px;color:var(--text3);margin-left:auto">月搜索 ' + escHtml(k.vol) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  var col2Html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;animation:fadeUp .4s ease">' +
+
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px">' +
+      '<div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">🔍 竞品 Listing 分析 <span style="font-size:9px;color:var(--text3);font-weight:400;margin-left:auto">' + ts + '</span></div>' +
+      '<div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">' + compCards + '</div>' +
+      '<div style="padding:10px 14px;background:var(--green-lt);border-top:1px solid var(--green-bd)">' +
+        '<div style="font-size:11px;color:var(--green);font-weight:600">💡 我们的差异化优势</div>' +
+        '<div style="font-size:11px;color:var(--green);margin-top:3px;line-height:1.55">炸篮可进洗碗机 + 5.5L大容量 + ≤42dB静音 — 三点全覆盖，无竞品同时做到</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px">' +
+      '<div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:13px;font-weight:700">🔑 关键词策略</div>' +
+      '<div style="padding:12px 14px">' + kwRows + '</div>' +
+      '<div style="padding:10px 14px;background:var(--blue-lt);border-top:1px solid var(--blue-bd);font-size:11px;color:var(--blue)">📌 ' + md.kwMain.filter(function(k){return k.used;}).length + ' 个核心关键词已植入标题和五点描述</div>' +
+    '</div>' +
+
+  '</div>';
+  addReportSection(col2Html);
+
+  // ── 3. 我们的 Listing（带设计意图注释）──
+  var bulletRows = md.bullets.map(function(b) {
+    return '<div style="margin-bottom:10px">' +
+      '<div style="display:flex;gap:8px;align-items:flex-start">' +
+        '<div style="flex:1;font-size:12px;color:var(--text2);line-height:1.65;padding:9px 12px;border-left:3px solid var(--purple-bd);background:var(--purple-lt);border-radius:0 7px 7px 0;font-family:Georgia,serif">' + b.en + '</div>' +
+      '</div>' +
+      '<div style="margin-top:4px;margin-left:3px;display:flex;align-items:center;gap:6px">' +
+        '<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--surface3);color:var(--text3);border:1px solid var(--border);font-weight:600">' + escHtml(b.tag) + '</span>' +
+        '<span style="font-size:10px;color:var(--text3)">→ ' + escHtml(b.cn) + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  var listingHtml = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;animation:fadeUp .4s ease">' +
+    '<div style="padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:10px">' +
+      '<div style="font-size:14px;font-weight:700;flex:1">📝 ' + md.platform + ' Listing · ' + md.name + '语</div>' +
+      '<div style="font-size:10px;color:var(--text3)">带设计意图注释</div>' +
+    '</div>' +
+    '<div style="padding:16px 20px">' +
+      '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">标题（含关键词）</div>' +
+      '<div style="font-size:13px;font-weight:700;line-height:1.6;font-family:Georgia,serif;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;color:var(--text)">' + escHtml(md.title) + '</div>' +
+      '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">五点描述（右侧为设计意图）</div>' +
+      bulletRows +
+    '</div>' +
+  '</div>';
+  addReportSection(listingHtml);
+
+  // ── 4. 文案范式 + 合规记录（并列）──
+  var patternCards = md.patterns.map(function(p, i) {
+    var colors = ['var(--blue)', 'var(--purple)', 'var(--green)'];
+    var lts = ['var(--blue-lt)', 'var(--purple-lt)', 'var(--green-lt)'];
+    var bds = ['var(--blue-bd)', 'var(--purple-bd)', 'var(--green-bd)'];
+    return '<div style="padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">' +
+      '<div style="font-size:11px;font-weight:700;color:' + colors[i%3] + ';margin-bottom:5px">' + escHtml(p.type) + '</div>' +
+      '<div style="font-size:12px;font-style:italic;color:var(--text);font-family:Georgia,serif;padding:8px 10px;background:' + lts[i%3] + ';border-left:3px solid ' + bds[i%3] + ';border-radius:0 5px 5px 0;margin-bottom:5px;line-height:1.6">"' + escHtml(p.example) + '"</div>' +
+      '<div style="font-size:11px;color:var(--text3);line-height:1.55">→ ' + escHtml(p.why) + '</div>' +
+    '</div>';
+  }).join('');
+
+  var complianceTags = md.compliance.map(function(c) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--green-lt);border:1px solid var(--green-bd);border-radius:7px;font-size:12px;color:var(--green);font-weight:500">' + escHtml(c) + '</div>';
+  }).join('');
+
+  var lastHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;animation:fadeUp .4s ease">' +
+
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px">' +
+      '<div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:13px;font-weight:700">✍️ 高转化文案范式</div>' +
+      '<div style="padding:12px 14px">' + patternCards + '</div>' +
+    '</div>' +
+
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px">' +
+      '<div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:13px;font-weight:700">⚖️ Guard 合规约束落地</div>' +
+      '<div style="padding:12px 14px;display:flex;flex-direction:column;gap:7px">' + complianceTags + '</div>' +
+      '<div style="padding:10px 14px;background:var(--surface3);border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.6">所有文案由 Marketing Agent 直接用' + md.name + '语写作，已通过 Guard 合规校验，非机器翻译。</div>' +
+    '</div>' +
+
+  '</div>';
+  addReportSection(lastHtml);
+}
+
+/* ══ Init ══ */
+document.getElementById('chatInput').addEventListener('input', function() {
+  autoResize(this);
+});
+
+})();
+</script>
+</body>
+</html>
