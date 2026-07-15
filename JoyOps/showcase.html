@@ -550,19 +550,19 @@
     <div class="page-inner">
       <div class="section-label">About</div>
       <h2 class="section-title">从比赛到产品化的思考</h2>
-      <p class="section-desc">京东杯给了我一个真实的采销场景，但不到 1 个月的赛程当时有很多问题没有思考清楚——比如为什么用 Agent 而不是 Workflow��[...]
-
+      <p class="section-desc">京东杯给了我一个真实的采销场景，但不到 1 个月的赛程当时有很多问题没有思考清楚——比如为什么用 Agent 而不是 Workflow，HITL 的节点怎么设计，商业化路径怎么走。这段时间的复盘和重构，就是这页的内容，也是作为AI产品经理需要的核心能力：产品判断力与，AI能力的介入时机。</p>
+      
       <div class="loop-section">
         <h4>商业化路径</h4>
-        <p>这个系统的目标客户分三层。第一层是<strong>跨境电商平台内部的采销团队</strong>——目前最痛点的人群，他们每天手动做这些调研，时间��[...]
-        <p style="margin-top:10px">变现模式上，第一层走内部 SaaS 或 API 调用，按任务量计费；第二三层走订阅制，按功能模块（调研/合规/文案）分档。</p[...]
+        <p>这个系统的目标客户分三层。第一层是<strong>跨境电商平台内部的采销团队</strong>——目前最痛点的人群，他们每天手动做这些调研，时间成本极高。</p>
+        <p style="margin-top:10px">变现模式上，第一层走内部 SaaS 或 API 调用，按任务量计费；第二三层走订阅制，按功能模块（调研/合规/文案）分档。</p>
       </div>
-
+  
       <div class="loop-section">
         <h4>设计约束与权衡</h4>
-        <p>不是无限调用工具的大模型 Demo。每个任务限制 <strong>30 次工具调用</strong>和 <strong>50k Token</strong>，因为真实的采销人员不会为一个选品任��[...]
+        <p>不是无限调用工具的大模型 Demo。每个任务限制 <strong>30 次工具调用</strong>和 <strong>50k Token</strong>，因为真实的采销人员不会为一个选品任务等待几分钟或付出高额 Token 成本。</p>
       </div>
-
+  
       <div class="tech-stack">
         <span class="tech-tag">Dify / Coze</span>
         <span class="tech-tag">GPT-4o / Claude</span>
@@ -571,10 +571,11 @@
         <span class="tech-tag">React</span>
         <span class="tech-tag">SQLite</span>
       </div>
-
+  
       <a href="crossborder-agent-design.md" class="about-link" target="_blank">查看完整设计文档 →</a>
     </div>
   </div>
+
 
 </div>
 
